@@ -1,15 +1,13 @@
 package com.cognia.api.domain.model;
 
-import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
-public record Subject(String id, String name, String description, List<Concept> concepts) {
-
+public record Subject(UUID id, String code, String name, String description, boolean active) {
 	public Subject {
-		requireText(id, "Subject id");
+		Objects.requireNonNull(id, "Subject id must not be null");
+		requireText(code, "Subject code");
 		requireText(name, "Subject name");
-		requireText(description, "Subject description");
-		concepts = List.copyOf(Objects.requireNonNull(concepts, "Subject concepts must not be null"));
 	}
 
 	private static void requireText(String value, String field) {

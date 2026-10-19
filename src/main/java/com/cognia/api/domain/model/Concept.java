@@ -1,13 +1,20 @@
 package com.cognia.api.domain.model;
 
-public record Concept(String id, String name, String description, int difficulty) {
+import java.util.Objects;
+import java.util.UUID;
 
+public record Concept(UUID id, UUID subjectId, String code, String name, String description,
+		int level, int order, boolean active) {
 	public Concept {
-		requireText(id, "Concept id");
+		Objects.requireNonNull(id, "Concept id must not be null");
+		Objects.requireNonNull(subjectId, "Concept subject id must not be null");
+		requireText(code, "Concept code");
 		requireText(name, "Concept name");
-		requireText(description, "Concept description");
-		if (difficulty < 1 || difficulty > 5) {
-			throw new IllegalArgumentException("Concept difficulty must be between 1 and 5");
+		if (level < 0 || level > 10) {
+			throw new IllegalArgumentException("Concept level must be between 0 and 10");
+		}
+		if (order < 0) {
+			throw new IllegalArgumentException("Concept order must not be negative");
 		}
 	}
 

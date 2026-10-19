@@ -1,0 +1,31 @@
+package com.cognia.api.adapter.in.web;
+
+import com.cognia.api.application.service.ResourceNotFoundException;
+import com.cognia.api.domain.model.InvalidPrerequisiteException;
+import com.cognia.api.domain.model.InvalidPrerequisiteException.Reason;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class ApiExceptionHandler {
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<ProblemDetail> handleNotFound(ResourceNotFoundException exception) {
+		return problem(HttpStatus.NOT_FOUND, "Resource not found", exception.getMessage());
+	}
+
+	@ExceptionHandler(InvalidPrerequisiteException.class)
+	public ResponseEntity<ProblemDetail> handleInvalidPrerequisite(InvalidPrerequisiteException exception) {
+		var status = exception.reason() == Reason.INVALID_REQUEST
+				? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.CONFLICT;
+		return problem(status, "Invalid prerequisite relationship", exception.getMessage());
+	}
+
+	private ResponseEntity<ProblemDetail> problem(HttpStatus status, String title, String detail) {
+		var body = ProblemDetail.forStatusAndDetail(status, detail);
+		body.setTitle(title);
+		return ResponseEntity.status(status).body(body);
+	}
+}

@@ -1,7 +1,15 @@
 spring:
   application:
-    name: api
-
+    name: cognia-api
+  profiles:
+    active: dev
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+  sql:
+    init:
+      mode: never
 management:
   endpoints:
     web:
@@ -11,3 +19,37 @@ management:
     health:
       probes:
         enabled: true
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${NEON_JDBC_URL}
+    username: ${NEON_DB_USER}
+    password: ${NEON_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 60000
+      initialization-fail-timeout: -1
+      minimum-idle: 0
+      maximum-pool-size: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: none
+  sql:
+    init:
+      mode: never
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  jpa:
+    hibernate:
+      ddl-auto: none
+  sql:
+    init:
+      mode: never

@@ -3,10 +3,11 @@ package com.cognia.api.application.port.out;
 import com.cognia.api.domain.model.Subject;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface SubjectRepository {
 
 	List<Subject> findAll();
 
-	Optional<Subject> findById(String id);
+	Optional<Subject> findById(UUID id);
 }
