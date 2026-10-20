@@ -13,7 +13,7 @@ public record PathStep(UUID id, UUID conceptId, int order, State state) {
 			case DISPONIBLE -> next == State.EN_PROGRESO || next == State.DOMINADO || next == State.BLOQUEADO;
 			case EN_PROGRESO -> next == State.REFUERZO || next == State.DOMINADO || next == State.BLOQUEADO;
 			case REFUERZO -> next == State.EN_PROGRESO || next == State.REFUERZO || next == State.DOMINADO || next == State.BLOQUEADO;
-			case DOMINADO -> next == State.BLOQUEADO;
+			case DOMINADO -> next == State.EN_PROGRESO || next == State.BLOQUEADO;
 		};
 		if (!valid) throw new InvalidPathTransitionException("Cannot transition path step from " + state + " to " + next);
 		return new PathStep(id, conceptId, order, next);

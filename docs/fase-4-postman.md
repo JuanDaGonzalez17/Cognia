@@ -11,7 +11,7 @@ La ruta topológica respeta el grafo y desempata por `orden_sugerido`. Aun con d
 1. Completar diagnóstico según [Fase 3](fase-3-postman.md).
 2. Generar ruta: `POST /api/v1/subjects/{subjectId}/learning-path`, con `X-Student-Id` requerido. Ejemplo para la asignatura de seed: `POST /api/v1/subjects/10000000-0000-0000-0000-000000000001/learning-path`.
 3. Consultar `GET /api/v1/subjects/{subjectId}/learning-path` y el siguiente paso en `GET /api/v1/subjects/{subjectId}/learning-path/next`.
-4. Iniciar evaluación: `POST /api/v1/subjects/{subjectId}/path-steps/{stepId}/short-evaluations`; devuelve sesión y actividades activas del concepto, sin claves. Si ya hay una sesión EN_PROGRESO para ese paso, devuelve esa misma sesión.
+4. Iniciar evaluación: `POST /api/v1/subjects/{subjectId}/path-steps/{stepId}/short-evaluations`; devuelve sesión y actividades activas del concepto, sin claves. Si ya hay una sesión EN_PROGRESO para ese paso, devuelve esa misma sesión. Se rechaza un paso BLOQUEADO; también se puede evaluar uno que inició DOMINADO por su perfil. Ese paso pasa a EN_PROGRESO y el resultado lo deja DOMINADO si aprueba o REFUERZO si falla.
 5. Responder: `POST /api/v1/short-evaluations/{sessionId}/answers/{activityId}`, body `{"optionId":"52000000-0000-0000-0000-000000000001","seconds":20}` (para respuesta corta, `{"answer":"2x²","seconds":20}`). La respuesta solo confirma registro. Finalizar con `POST /api/v1/short-evaluations/{sessionId}/finish`; devuelve puntaje, aprobación, estado nuevo del paso y si se recalculó, sin detalle por pregunta.
 6. Aprobar desbloquea dependientes. Fallar deja REFUERZO; recomienda práctica a dificultad igual o menor que la máxima dificultad evaluada.
 7. Dos fallos consecutivos en sesiones del paso de la ruta actual disparan recálculo. La ruta anterior queda RECALCULADA antes de crear nueva versión. Los pasos DOMINADO por evaluación se preservan; si el nuevo resultado no cambia ruta ni estados, no se crea versión. La nueva ruta hace que el contador por paso vuelva a cero.
@@ -26,7 +26,7 @@ Inicio: `{"session":{"id":"<uuid>","conceptId":"20000000-0000-0000-0000-00000000
 
 Respuesta: `{"id":"<answer-uuid>","activityId":"42000000-0000-0000-0000-000000000001","recorded":"Respuesta registrada"}`. Cierre: `{"sessionId":"<uuid>","score":100.0,"approved":true,"stepState":"DOMINADO","recalculated":false}`.
 
-Errores: 404 para recursos inexistentes, 422 para datos o actividades no válidas, 409 para diagnóstico pendiente, ruta ya activa, paso bloqueado/dominado o sesión fuera de estado. Ninguna respuesta incluye la corrección.
+Errores: 404 para recursos inexistentes, 422 para datos o actividades no válidas, 409 para diagnóstico pendiente, ruta ya activa, paso bloqueado o sesión fuera de estado. Ninguna respuesta incluye la corrección.
 
 ## Cambio de schema para la base existente
 

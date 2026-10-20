@@ -1,5 +1,5 @@
 package com.cognia.api.adapter.out.persistence;
-import jakarta.persistence.*; import java.time.Instant; import java.util.UUID;
+import jakarta.persistence.Column; import jakarta.persistence.Entity; import jakarta.persistence.GeneratedValue; import jakarta.persistence.GenerationType; import jakarta.persistence.Id; import jakarta.persistence.Table; import java.time.Instant; import java.util.UUID;
 @Entity @Table(name="ruta_aprendizaje") public class LearningPathJpaEntity {
 	@Id @GeneratedValue(strategy=GenerationType.UUID) private UUID id; @Column(name="estudiante_id",nullable=false) private UUID studentId; @Column(name="asignatura_id",nullable=false) private UUID subjectId; @Column(nullable=false) private int version; @Column(nullable=false) private String estado; @Column(name="fecha_creacion",insertable=false,updatable=false) private Instant createdAt;
 	protected LearningPathJpaEntity(){} LearningPathJpaEntity(UUID student,UUID subject,int version,String state){this.studentId=student;this.subjectId=subject;this.version=version;this.estado=state;}
