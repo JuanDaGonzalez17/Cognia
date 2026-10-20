@@ -1,0 +1,9 @@
+package com.cognia.api.adapter.out.persistence;
+import static org.junit.jupiter.api.Assertions.*;
+import com.cognia.api.TestcontainersConfiguration; import com.cognia.api.application.port.out.PracticeAttemptRepository; import com.cognia.api.domain.model.PracticeAttempt; import java.util.UUID; import org.junit.jupiter.api.Test; import org.springframework.beans.factory.annotation.Autowired; import org.springframework.boot.test.context.SpringBootTest; import org.springframework.context.annotation.Import; import org.springframework.dao.DataIntegrityViolationException; import org.springframework.jdbc.core.JdbcTemplate; import org.springframework.test.context.ActiveProfiles; import org.springframework.test.context.jdbc.Sql;
+@SpringBootTest @ActiveProfiles("test") @Import(TestcontainersConfiguration.class) @Sql({"/db/seed-calculo-integral.sql","/db/seed-actividades.sql"}) class PracticePersistenceTest {
+	@Autowired PracticeAttemptRepository attempts; @Autowired JdbcTemplate jdbc;
+	private static UUID id(int n){return UUID.fromString("%08d-0000-0000-0000-%012d".formatted(0,n));}
+	@Test void savesAndReadsPracticeAttempt(){var saved=attempts.save(new PracticeAttempt(null,UUID.fromString("30000000-0000-0000-0000-000000000001"),UUID.fromString("40000000-0000-0000-0000-000000000001"),UUID.fromString("50000000-0000-0000-0000-000000000001"),"x²",true,12)); assertNotNull(saved.id()); assertEquals("x²",jdbc.queryForObject("select respuesta_dada from intento_actividad_practica where id=?",String.class,saved.id()));}
+	@Test void databaseRejectsOptionBelongingToDifferentActivity(){assertThrows(DataIntegrityViolationException.class,()->attempts.save(new PracticeAttempt(null,UUID.fromString("30000000-0000-0000-0000-000000000001"),UUID.fromString("40000000-0000-0000-0000-000000000001"),UUID.fromString("50000000-0000-0000-0000-000000000003"),"x²",true,null)));}
+}

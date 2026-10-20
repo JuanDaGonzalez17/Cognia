@@ -1,0 +1,3 @@
+package com.cognia.api.adapter.out.persistence;
+import com.cognia.api.application.port.out.PracticeAttemptRepository; import com.cognia.api.domain.model.PracticeAttempt; import org.springframework.stereotype.Repository;
+@Repository public class PracticeAttemptJpaRepositoryAdapter implements PracticeAttemptRepository { private final PracticeAttemptJpaRepository repository; private final ActivityJpaMapper mapper=new ActivityJpaMapper(); public PracticeAttemptJpaRepositoryAdapter(PracticeAttemptJpaRepository repository){this.repository=repository;} public PracticeAttempt save(PracticeAttempt attempt){return mapper.toDomain(repository.save(mapper.toEntity(attempt)));} }

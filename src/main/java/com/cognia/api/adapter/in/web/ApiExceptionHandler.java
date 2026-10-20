@@ -1,6 +1,7 @@
 package com.cognia.api.adapter.in.web;
 
 import com.cognia.api.application.service.ResourceNotFoundException;
+import com.cognia.api.application.service.InvalidPracticeRequestException;
 import com.cognia.api.domain.model.InvalidPrerequisiteException;
 import com.cognia.api.domain.model.InvalidPrerequisiteException.Reason;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -21,6 +24,16 @@ public class ApiExceptionHandler {
 		var status = exception.reason() == Reason.INVALID_REQUEST
 				? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.CONFLICT;
 		return problem(status, "Invalid prerequisite relationship", exception.getMessage());
+	}
+
+	@ExceptionHandler(InvalidPracticeRequestException.class)
+	public ResponseEntity<ProblemDetail> handleInvalidPractice(InvalidPracticeRequestException exception) {
+		return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid practice request", exception.getMessage());
+	}
+
+	@ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingRequestHeaderException.class})
+	public ResponseEntity<ProblemDetail> handleBadRequest(Exception exception) {
+		return problem(HttpStatus.BAD_REQUEST, "Invalid request", "A required UUID or header is missing or invalid");
 	}
 
 	private ResponseEntity<ProblemDetail> problem(HttpStatus status, String title, String detail) {

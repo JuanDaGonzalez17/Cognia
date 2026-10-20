@@ -1,0 +1,3 @@
+package com.cognia.api.adapter.out.persistence;
+import jakarta.persistence.*; import java.util.UUID;
+@Entity @Table(name="actividad_opcion") public class ActivityOptionJpaEntity { @Id private UUID id; @Column(name="actividad_id") private UUID activityId; @Column(name="texto") private String text; @Column(name="es_correcta") private boolean correct; @Column(name="retroalimentacion_especifica") private String specificFeedback; protected ActivityOptionJpaEntity(){} public UUID getId(){return id;} public UUID getActivityId(){return activityId;} public String getText(){return text;} public boolean isCorrect(){return correct;} public String getSpecificFeedback(){return specificFeedback;} }

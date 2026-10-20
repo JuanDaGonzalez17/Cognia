@@ -58,6 +58,12 @@ GET {{baseUrl}}/api/v1/subjects
 GET {{baseUrl}}/api/v1/subjects/{{subjectId}}
 ```
 
+La barra entre `subjects` y el UUID es obligatoria. La URL completa de ejemplo es:
+
+```text
+http://localhost:8080/api/v1/subjects/10000000-0000-0000-0000-000000000001
+```
+
 ### Consultar conceptos de Cálculo Integral
 
 ```http
@@ -125,3 +131,20 @@ Para ejecutar la suite completa desde PowerShell:
 ```
 
 Las pruebas de persistencia usan PostgreSQL con Testcontainers y cargan el schema y el seed; usan el perfil `test`, no Neon.
+
+## Solución de problemas
+
+- `GET /api/v1/subjects` responde `200` con `[]`: la base de datos a la que está conectada esta instancia no contiene asignaturas. El perfil de desarrollo usa `NEON_JDBC_URL`, `NEON_DB_USER` y `NEON_DB_PASSWORD`; confirma que Postman está consultando la instancia esperada y que el seed se aplicó a esa misma base/branch. La aplicación no lo ejecuta al arrancar.
+- `GET /api/v1/subjects10000000-...` responde `404`: falta `/` antes del UUID. Usa `/api/v1/subjects/10000000-...`.
+- Si usas el `subjectId` del seed y la ruta está bien formada, una base sin esa fila devuelve 404 con `ProblemDetail`; una ruta mal formada como la anterior cae en el 404 genérico de Spring.
+
+Para verificar dónde quedó insertado el seed, ejecuta en el SQL Editor de Neon:
+
+```sql
+SELECT current_database(), current_schema(), current_user;
+SELECT id, codigo, nombre
+FROM public.asignatura
+ORDER BY codigo;
+```
+
+Compara la branch/base seleccionada en Neon con el host y el nombre de base de `NEON_JDBC_URL`. El proyecto ignora `.env` y Spring Boot no lo carga automáticamente: exporta las tres variables en la terminal o configúralas en el Run Configuration del IDE, y reinicia la aplicación después de cambiarlas. No compartas los valores de usuario, contraseña ni URL completos.

@@ -1,4 +1,4 @@
-# Cognia API
+﻿# Cognia API
 
 Cognia is an adaptive learning platform. The curriculum slice provides
 subject and concept queries backed by PostgreSQL, plus prerequisite graph
@@ -7,22 +7,32 @@ queries and updates.
 ## Requisitos
 
 - Java 17 (toolchain del proyecto)
-- Docker en ejecución para los tests de integración con Testcontainers
+- Docker en ejecuciÃ³n para los tests de integraciÃ³n con Testcontainers
 
-## Configurar Neon (desarrollo)
+## Configurar Supabase (desarrollo)
 
-El perfil `dev` es el predeterminado y usa la conexión JDBC directa de Neon.
-No carga ni modifica el schema. Copia `.env.example` a `.env`, sustituye los
-valores de ejemplo por tus credenciales y exporta estas variables en la shell
-antes de iniciar la app:
+El perfil `dev` es el predeterminado y se conecta a PostgreSQL mediante las
+variables `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y
+`SPRING_DATASOURCE_PASSWORD`. Usa los valores de conexión que proporciona
+Supabase; la URL JDBC debe incluir `sslmode=require`. Supabase ofrece conexión
+directa y conexiones mediante pooler: usa el host, puerto y usuario indicados
+para el modo elegido (la conexión directa normalmente usa el puerto `5432`).
+
+Spring Boot no carga `.env` automáticamente. Define las tres variables en el
+entorno desde el que inicias Gradle, o configúralas en el Run Configuration del
+IDE. En PowerShell, por ejemplo:
 
 ```powershell
-$env:NEON_JDBC_URL = "jdbc:postgresql://<host-directo>/<base>?sslmode=require"
-$env:NEON_DB_USER = "<usuario>"
-$env:NEON_DB_PASSWORD = "<contraseña>"
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://<host>:<puerto>/postgres?sslmode=require"
+$env:SPRING_DATASOURCE_USERNAME = "<usuario de Supabase>"
+$env:SPRING_DATASOURCE_PASSWORD = "<contraseña de Supabase>"
+.\gradlew.bat bootRun
 ```
 
-No guardes credenciales reales en Git. `.env` está ignorado.
+Si guardas esos valores en `Cognia/.env`, cópialos al entorno antes de ejecutar
+la aplicación; editar el archivo por sí solo no los activa. No guardes ni
+compartas credenciales reales en Git o en documentación. La aplicación no
+carga ni modifica el schema ni ejecuta seeds al iniciar.
 
 ## Run
 
@@ -40,7 +50,12 @@ curl http://localhost:8080/api/v1/subjects
 curl http://localhost:8080/api/v1/subjects/10000000-0000-0000-0000-000000000001
 curl http://localhost:8080/api/v1/subjects/10000000-0000-0000-0000-000000000001/concepts
 curl http://localhost:8080/api/v1/concepts/20000000-0000-0000-0000-000000000002/prerequisites
+curl http://localhost:8080/api/v1/concepts/20000000-0000-0000-0000-000000000001/practice-activities
 ```
+
+La Fase 2 agrega `GET /api/v1/concepts/{conceptId}/practice-activities` (filtro opcional `?difficulty=1..3`) y `POST /api/v1/activities/{activityId}/practice-attempts`. El POST recibe `X-Student-Id` temporal y JSON con `optionId` para selecciÃ³n mÃºltiple o `answer` para respuesta corta (opcional `seconds`). La consulta no revela respuestas correctas ni criterios. Ejemplos completos, UUIDs fijos del seed y errores: [docs/fase-2-postman.md](docs/fase-2-postman.md).
+
+Aplica manualmente `src/main/resources/db/seed-actividades.sql` despuÃ©s del seed curricular; es material provisional de desarrollo que debe validar un docente. No hay migraciones ni inicializaciÃ³n automÃ¡tica del schema o seeds.
 
 Para agregar un prerrequisito:
 
@@ -55,8 +70,8 @@ concepto, `422` para autoenlaces o conceptos de otra asignatura y `409` para
 ciclos o aristas duplicadas. Los errores usan `ProblemDetail`.
 
 `src/main/resources/db/seed-calculo-integral.sql` es un ejemplo provisional
-para revisión docente. Aplícalo manualmente en Neon solo después de validarlo;
-la aplicación no ejecuta schema ni seed al iniciar.
+para revisiÃ³n docente. AplÃ­calo manualmente en Supabase solo despuÃ©s de validarlo;
+la aplicaciÃ³n no ejecuta schema ni seed al iniciar.
 
 ## Test and build
 
@@ -66,7 +81,7 @@ la aplicación no ejecuta schema ni seed al iniciar.
 ```
 
 Los tests usan PostgreSQL 16 mediante Testcontainers y requieren Docker. Se
-ejecutan con el perfil `test`; nunca toman la URL de Neon.
+ejecutan con el perfil `test`; nunca toman la URL de Supabase.
 
 ## Architecture
 
@@ -75,13 +90,13 @@ structure:
 
 ```text
 com.cognia.api
-├── domain/model                 # Framework-independent curriculum model
-├── application/port/in          # Use-case interfaces
-├── application/port/out         # Outbound repository ports
-├── application/service           # Use-case orchestration
-└── adapter
-    ├── in/web                    # REST entry adapter and response DTOs
-    └── out/persistence            # JPA entities, mappers, and PostgreSQL adapters
+â”œâ”€â”€ domain/model                 # Framework-independent curriculum model
+â”œâ”€â”€ application/port/in          # Use-case interfaces
+â”œâ”€â”€ application/port/out         # Outbound repository ports
+â”œâ”€â”€ application/service           # Use-case orchestration
+â””â”€â”€ adapter
+    â”œâ”€â”€ in/web                    # REST entry adapter and response DTOs
+    â””â”€â”€ out/persistence            # JPA entities, mappers, and PostgreSQL adapters
 ```
 
 The request flow is:
@@ -96,9 +111,10 @@ leak into the domain.
 - Hibernate usa `ddl-auto=none` y `spring.sql.init.mode=never`; la app no
   modifica el schema.
 - Las consultas usan UUID en las rutas; las tablas y columnas conservan sus
-  nombres en español, traducidos dentro del adaptador JPA.
-- El seed de Cálculo Integral y sus aristas son provisionales y no representan
-  un currículo oficial.
+  nombres en espaÃ±ol, traducidos dentro del adaptador JPA.
+- El seed de CÃ¡lculo Integral y sus aristas son provisionales y no representan
+  un currÃ­culo oficial.
 - Authentication, diagnostics, mastery calculation, learning-path adaptation,
   assessments, reviews, and the remaining product model are intentionally
   deferred until their concrete use cases and rules are defined.
+
