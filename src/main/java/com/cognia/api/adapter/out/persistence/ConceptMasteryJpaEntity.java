@@ -1,0 +1,7 @@
+package com.cognia.api.adapter.out.persistence;
+import com.cognia.api.domain.model.ConceptMastery;
+import jakarta.persistence.Entity; import jakarta.persistence.*; import java.util.UUID;
+@Entity @Table(name="dominio_conceptual",uniqueConstraints=@UniqueConstraint(name="uq_dominio_perfil_concepto",columnNames={"perfil_id","concepto_id"})) public class ConceptMasteryJpaEntity {
+	@Id @GeneratedValue(strategy=GenerationType.UUID) private UUID id; @Column(name="perfil_id",nullable=false) private UUID profileId; @Column(name="concepto_id",nullable=false) private UUID conceptId; @Column(name="nivel_dominio",nullable=false) private double level; @Column(name="total_evaluaciones",nullable=false) private int totalEvaluations; @Column(name="total_aciertos",nullable=false) private int totalCorrect;
+	protected ConceptMasteryJpaEntity(){} public ConceptMasteryJpaEntity(UUID profile,UUID concept,double level,int total,int correct){profileId=profile;conceptId=concept;this.level=level;totalEvaluations=total;totalCorrect=correct;} public UUID getId(){return id;} public UUID getConceptId(){return conceptId;} public double getLevel(){return level;} public int getTotalEvaluations(){return totalEvaluations;} public int getTotalCorrect(){return totalCorrect;} public void update(double l,int t,int c){level=l;totalEvaluations=t;totalCorrect=c;} public ConceptMastery toDomain(){return new ConceptMastery(conceptId,level,totalEvaluations,totalCorrect);}
+}

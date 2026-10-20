@@ -1,3 +1,3 @@
 package com.cognia.api.adapter.out.persistence;
-import jakarta.persistence.*; import java.util.UUID;
+import jakarta.persistence.Entity; import jakarta.persistence.*; import java.util.UUID;
 @Entity @Table(name="actividad_criterio_rc") public class ShortAnswerCriterionJpaEntity { @Id private UUID id; @Column(name="actividad_id") private UUID activityId; @Column(name="respuesta_patron") private String pattern; @Column(name="es_expresion_regular") private boolean regularExpression; protected ShortAnswerCriterionJpaEntity(){} public UUID getId(){return id;} public UUID getActivityId(){return activityId;} public String getPattern(){return pattern;} public boolean isRegularExpression(){return regularExpression;} }

@@ -278,8 +278,9 @@ CREATE TABLE sesion_evaluacion (
     CONSTRAINT ck_sesion_completada_coherente
         CHECK (estado <> 'COMPLETADA'
             OR (puntaje_obtenido IS NOT NULL
-                AND aprobada IS NOT NULL
-                AND fecha_finalizacion IS NOT NULL))
+                AND fecha_finalizacion IS NOT NULL
+                AND ((tipo_evaluacion = 'DIAGNOSTICO' AND aprobada IS NULL)
+                    OR (tipo_evaluacion <> 'DIAGNOSTICO' AND aprobada IS NOT NULL))))
 );
 
 CREATE INDEX idx_sesion_eval_estudiante

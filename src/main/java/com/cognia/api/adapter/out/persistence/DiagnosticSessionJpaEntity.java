@@ -1,0 +1,6 @@
+package com.cognia.api.adapter.out.persistence;
+import jakarta.persistence.Entity; import jakarta.persistence.*; import java.time.Instant; import java.util.UUID;
+@Entity @Table(name="sesion_evaluacion") public class DiagnosticSessionJpaEntity {
+	@Id @GeneratedValue(strategy=GenerationType.UUID) private UUID id; @Column(name="estudiante_id",nullable=false) private UUID studentId; @Column(name="tipo_evaluacion",nullable=false) private String type; @Column(name="asignatura_id",nullable=false) private UUID subjectId; @Column(name="estado",nullable=false) private String state; @Column(name="puntaje_obtenido") private Double score; @Column(name="fecha_finalizacion") private Instant closedAt; @Column(name="aprobada") private Boolean passed;
+	protected DiagnosticSessionJpaEntity(){} public DiagnosticSessionJpaEntity(UUID student,UUID subject){studentId=student;subjectId=subject;type="DIAGNOSTICO";state="EN_PROGRESO";} public UUID getId(){return id;} public UUID getStudentId(){return studentId;} public UUID getSubjectId(){return subjectId;} public String getState(){return state;} public Double getScore(){return score;} public Instant getClosedAt(){return closedAt;} public void complete(double value,Instant at){state="COMPLETADA";score=value;closedAt=at;passed=null;}
+}

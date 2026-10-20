@@ -19,6 +19,12 @@ management:
     health:
       probes:
         enabled: true
+diagnostic:
+  mastery:
+    difficulty-weights:
+      1: 1.0
+      2: 1.5
+      3: 2.0
 ---
 spring:
   config:

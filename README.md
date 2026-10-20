@@ -55,6 +55,8 @@ curl http://localhost:8080/api/v1/concepts/20000000-0000-0000-0000-000000000001/
 
 La Fase 2 agrega `GET /api/v1/concepts/{conceptId}/practice-activities` (filtro opcional `?difficulty=1..3`) y `POST /api/v1/activities/{activityId}/practice-attempts`. El POST recibe `X-Student-Id` temporal y JSON con `optionId` para selecciÃ³n mÃºltiple o `answer` para respuesta corta (opcional `seconds`). La consulta no revela respuestas correctas ni criterios. Ejemplos completos, UUIDs fijos del seed y errores: [docs/fase-2-postman.md](docs/fase-2-postman.md).
 
+La Fase 3 agrega diagnóstico inicial por asignatura y consulta del perfil. Usa `X-Student-Id` temporal; las respuestas del diagnóstico se registran sin devolver corrección hasta el cierre. El dominio se estima por concepto con pesos provisionales configurados en `application.yaml` (1.0, 1.5 y 2.0 por dificultad 1, 2 y 3). Aplica manualmente `src/main/resources/db/seed-diagnostico.sql` después de los seeds previos. Endpoints, ejemplos y errores: [docs/fase-3-postman.md](docs/fase-3-postman.md).
+
 Aplica manualmente `src/main/resources/db/seed-actividades.sql` despuÃ©s del seed curricular; es material provisional de desarrollo que debe validar un docente. No hay migraciones ni inicializaciÃ³n automÃ¡tica del schema o seeds.
 
 Para agregar un prerrequisito:
@@ -114,7 +116,7 @@ leak into the domain.
   nombres en espaÃ±ol, traducidos dentro del adaptador JPA.
 - El seed de CÃ¡lculo Integral y sus aristas son provisionales y no representan
   un currÃ­culo oficial.
-- Authentication, diagnostics, mastery calculation, learning-path adaptation,
-  assessments, reviews, and the remaining product model are intentionally
-  deferred until their concrete use cases and rules are defined.
+- Authentication, learning-path adaptation, short assessments, reviews, and
+  the remaining product model are intentionally deferred. Diagnostic mastery
+  weights and seed content are provisional pending teacher validation.
 

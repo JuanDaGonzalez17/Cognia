@@ -2,6 +2,7 @@ package com.cognia.api.adapter.in.web;
 
 import com.cognia.api.application.service.ResourceNotFoundException;
 import com.cognia.api.application.service.InvalidPracticeRequestException;
+import com.cognia.api.application.service.DiagnosticConflictException;
 import com.cognia.api.domain.model.InvalidPrerequisiteException;
 import com.cognia.api.domain.model.InvalidPrerequisiteException.Reason;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,10 @@ public class ApiExceptionHandler {
 	@ExceptionHandler(InvalidPracticeRequestException.class)
 	public ResponseEntity<ProblemDetail> handleInvalidPractice(InvalidPracticeRequestException exception) {
 		return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid practice request", exception.getMessage());
+	}
+	@ExceptionHandler(DiagnosticConflictException.class)
+	public ResponseEntity<ProblemDetail> handleDiagnosticConflict(DiagnosticConflictException exception) {
+		return problem(HttpStatus.CONFLICT, "Diagnostic conflict", exception.getMessage());
 	}
 
 	@ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingRequestHeaderException.class})
