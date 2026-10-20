@@ -1,2 +1,2 @@
 package com.cognia.api.domain.model;
-public enum MasteryChangeSource { DIAGNOSTICO }
+public enum MasteryChangeSource { DIAGNOSTICO, EVALUACION_CORTA }

@@ -270,6 +270,8 @@ CREATE TABLE sesion_evaluacion (
         CHECK (estado IN ('EN_PROGRESO', 'COMPLETADA', 'ABANDONADA')),
     CONSTRAINT ck_sesion_concepto_requerido
         CHECK (tipo_evaluacion <> 'EVALUACION_CORTA' OR concepto_id IS NOT NULL),
+    CONSTRAINT ck_sesion_evaluacion_paso_requerido
+        CHECK (tipo_evaluacion <> 'EVALUACION_CORTA' OR paso_ruta_id IS NOT NULL),
     CONSTRAINT ck_sesion_intento
         CHECK (intento_numero >= 1),
     CONSTRAINT ck_sesion_puntaje

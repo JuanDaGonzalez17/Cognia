@@ -18,4 +18,12 @@ public class RuleBasedMasteryPolicy implements MasteryPolicy {
 		for (var item : evidence) { var weight = weights.get(item.difficulty()); total += weight; if (item.correct()) { correct += weight; hits++; } count++; }
 		return new ConceptMastery(conceptId, correct / total, count, hits);
 	}
+	@Override public ConceptMastery incorporate(UUID conceptId, ConceptMastery previous, List<DiagnosticEvidence> evidence) {
+		if (evidence.isEmpty()) throw new IllegalArgumentException("Cannot update mastery without evidence");
+		var weight=0d; var correct=0d; var hits=0;
+		for(var item:evidence){var w=weights.get(item.difficulty());weight+=w;if(item.correct()){correct+=w;hits++;}}
+		var n=previous==null?0:previous.totalEvaluations();var old=previous==null?0d:previous.level();
+		var next=(old*n+correct)/(n+weight);
+		return new ConceptMastery(conceptId,next,n+evidence.size(),(previous==null?0:previous.totalCorrect())+hits);
+	}
 }

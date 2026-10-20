@@ -25,6 +25,11 @@ diagnostic:
       1: 1.0
       2: 1.5
       3: 2.0
+learning-path:
+  initial-mastery-threshold: 0.80 # provisional; validate with a teacher
+  short-evaluation:
+    approval-threshold: 70 # provisional; validate with a teacher
+    consecutive-failures-before-recalculation: 2 # provisional; validate with a teacher
 ---
 spring:
   config:

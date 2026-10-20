@@ -57,6 +57,8 @@ La Fase 2 agrega `GET /api/v1/concepts/{conceptId}/practice-activities` (filtro 
 
 La Fase 3 agrega diagnóstico inicial por asignatura y consulta del perfil. Usa `X-Student-Id` temporal; las respuestas del diagnóstico se registran sin devolver corrección hasta el cierre. El dominio se estima por concepto con pesos provisionales configurados en `application.yaml` (1.0, 1.5 y 2.0 por dificultad 1, 2 y 3). Aplica manualmente `src/main/resources/db/seed-diagnostico.sql` después de los seeds previos. Endpoints, ejemplos y errores: [docs/fase-3-postman.md](docs/fase-3-postman.md).
 
+La Fase 4 incorpora rutas personalizadas y evaluación corta por concepto. Los umbrales están en `application.yaml` y son provisionales. Aplica manualmente `db/seed-evaluacion-corta.sql`; para una base existente, aplica el `ALTER TABLE` indicado en [docs/fase-4-postman.md](docs/fase-4-postman.md). Flujo, estados y ejemplos: [docs/fase-4-postman.md](docs/fase-4-postman.md).
+
 Aplica manualmente `src/main/resources/db/seed-actividades.sql` despuÃ©s del seed curricular; es material provisional de desarrollo que debe validar un docente. No hay migraciones ni inicializaciÃ³n automÃ¡tica del schema o seeds.
 
 Para agregar un prerrequisito:

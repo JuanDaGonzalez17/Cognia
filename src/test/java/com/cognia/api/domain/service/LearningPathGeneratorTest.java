@@ -1,0 +1,17 @@
+package com.cognia.api.domain.service;
+
+import static org.junit.jupiter.api.Assertions.*;
+import com.cognia.api.domain.model.*;
+import java.util.*;
+import org.junit.jupiter.api.Test;
+
+class LearningPathGeneratorTest {
+	private final UUID subject=UUID.randomUUID(), a=UUID.randomUUID(), b=UUID.randomUUID(), c=UUID.randomUUID();
+	private Concept concept(UUID id,int order){return new Concept(id,subject,id.toString(),"Concept",null,1,order,true);}
+	private List<Prerequisite> graph(){return List.of(new Prerequisite(subject,b,a),new Prerequisite(subject,c,b));}
+	@Test void generatesTopologicalOrderAndDoesNotUnlockMasteryBeforePrerequisites(){var path=new LearningPathGenerator().generate(List.of(concept(c,0),concept(b,1),concept(a,2)),graph(),Map.of(c,.95),.8);assertEquals(List.of(a,b,c),path.stream().map(PathStep::conceptId).toList());assertEquals(PathStep.State.DISPONIBLE,path.get(0).state());assertEquals(PathStep.State.BLOQUEADO,path.get(2).state());}
+	@Test void rejectsInvalidTransition(){assertThrows(InvalidPathTransitionException.class,()->new PathStep(null,a,0,PathStep.State.BLOQUEADO).transitionTo(PathStep.State.REFUERZO));}
+	@Test void passingUnlocksOnlyEligibleDependentStepsAndFailingLeavesReinforcement(){var generator=new LearningPathGenerator();var initial=generator.generate(List.of(concept(a,0),concept(b,1),concept(c,2)),graph(),Map.of(),.8);var afterA=generator.afterResult(initial,a,true,graph());assertEquals(PathStep.State.DISPONIBLE,afterA.get(1).state());assertEquals(PathStep.State.BLOQUEADO,afterA.get(2).state());var failed=generator.afterResult(afterA,b,false,graph());assertEquals(PathStep.State.REFUERZO,failed.get(1).state());}
+	@Test void completingAllStepsCompletesPathAndMasteredPathStepsArePreservedAcrossRecalculation(){var generator=new LearningPathGenerator();var graph=List.of(new Prerequisite(subject,b,a));var steps0=generator.generate(List.of(concept(a,0),concept(b,1)),graph,Map.of(),.8);var steps1=generator.afterResult(steps0,a,true,graph);var steps=generator.afterResult(steps1,b,true,graph);assertTrue(steps.stream().allMatch(s->s.state()==PathStep.State.DOMINADO));var active=new LearningPath(UUID.randomUUID(),UUID.randomUUID(),subject,1,LearningPath.State.ACTIVA,steps0);assertEquals(LearningPath.State.COMPLETADA,active.withSteps(steps).state());var recalculated=generator.regenerate(List.of(concept(a,0),concept(b,1)),graph,Map.of(),.8,steps);assertTrue(recalculated.stream().allMatch(s->s.state()==PathStep.State.DOMINADO));}
+	@Test void masteryAboveThresholdCannotSkipUndominatedPrerequisite(){var path=new LearningPathGenerator().generate(List.of(concept(a,0),concept(b,1),concept(c,2)),graph(),Map.of(b,.99,c,.99),.8);assertEquals(PathStep.State.DISPONIBLE,path.get(0).state());assertEquals(PathStep.State.BLOQUEADO,path.get(1).state());assertEquals(PathStep.State.BLOQUEADO,path.get(2).state());}
+}

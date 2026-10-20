@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface MasteryPolicy {
 	ConceptMastery estimate(UUID conceptId, List<DiagnosticEvidence> evidence);
+	default ConceptMastery incorporate(UUID conceptId, ConceptMastery previous, List<DiagnosticEvidence> evidence) { throw new UnsupportedOperationException("Incremental mastery is not supported"); }
 }
