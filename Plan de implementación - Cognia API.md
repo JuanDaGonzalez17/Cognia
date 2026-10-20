@@ -1,6 +1,23 @@
 # Plan de implementación - Cognia API
 
-Oct 19, 2026 · @Alejandro
+**Fecha de actualización:** 20 de Octubre, 2026 · @Alejandro  
+**Estado General de Ejecución:** **~71.4% del Plan Global (5 de 7 Fases completadas)** / **83.3% del Backend Core API (5 de 6 Fases completadas)**
+
+---
+
+## 📊 Tablero de Control y Estado de Ejecución
+
+| Fase | Título | Estado | % Avance | Hito / Criterio de Cierre |
+| :--- | :--- | :---: | :---: | :--- |
+| **Fase 0** | Preparación y Base | ✅ **Completada** | 100% | Configuración base, PostgreSQL/Supabase, Testcontainers, Schema unificado. |
+| **Fase 1** | Currículo y Prerrequisitos | ✅ **Completada** | 100% | CRUD asignaturas/conceptos, validación acíclica de grafo y seed Cálculo Integral. |
+| **Fase 2** | Actividades y Práctica | ✅ **Completada** | 100% | Actividades formativas, SM y RC, retroalimentación inmediata, intentos registrados. |
+| **Fase 3** | Diagnóstico y Dominio | ✅ **Completada** | 100% | Sesiones diagnósticas, cálculo de maestría inicial y auditoría en historial. |
+| **Fase 4** | Ruta y Evaluación Corta | ✅ **Completada** | 100% | Rutas topológicas, evaluación sumativa (3 ítems), avance/refuerzo y recálculo versionado. |
+| **Fase 5** | Repasos SM-2 y Examen Global | ⏳ **Pendiente** | 0% | Motor SM-2 (Anki), cola diaria, amnesia conceptual (>=2 fallos) y examen global. |
+| **Fase 6** | Transversales y Frontend | 🟡 **Parcial** | ~20% | `ProblemDetail` y validaciones listas. Pendiente: Spring Security/JWT, OpenAPI, React y CI. |
+
+---
 
 ## Principio: slices verticales, no capas horizontales
 
@@ -17,125 +34,122 @@ Dentro de cada slice el orden es siempre el mismo (es el skill `hexagonal-slice`
 
 Mientras no exista el paso 4, un adaptador en memoria permite probar el controller. La slice siguiente no empieza hasta que la actual tenga tests en verde y esté integrada.
 
-## Hoja de ruta
+---
 
-&#91;embedded content: hoja de ruta · 7 fases con su criterio de cierre\]
+## Detalle de Fases
 
-Cada rombo es el criterio que cierra la fase. La Fase 3 concentra el mayor riesgo y la Fase 5 es alcance adicional al anteproyecto, por eso va al final.
+### Fase 0 · Preparación ✅ `[COMPLETADA - 100%]`
 
-## Fase 0 · Preparación
+Deja el repo listo para que el agente trabaje con contexto y sin sorpresas. Termina cuando la app arranca contra PostgreSQL/Supabase y `./gradlew test` pasa con Testcontainers.
 
-Deja el repo listo para que el agente trabaje con contexto y sin sorpresas. Termina cuando la app arranca contra Neon y `./gradlew test` pasa con Testcontainers.
+- **Entregables implementados:**
+  - `build.gradle.kts` configurado con Spring Boot 4.1.1, Java 17 LTS, Spring Data JPA, WebMVC, Validation, Actuator y Testcontainers PostgreSQL 2.0.5.
+  - Perfiles `dev` (conectado a Supabase mediante variables de entorno) y `test` (con Testcontainers).
+  - DDL canónico centralizado en `src/main/resources/db/migration/schema.sql` con `ddl-auto: none` y `spring.sql.init.mode: never`.
+  - Configuración de variables de entorno seguras vía `.env` (excluido en `.gitignore`).
 
-- Copiar al repo `CLAUDE.md` y `.claude/skills/`. Guardar `schema.sql` (el schema completo, ya cargado en Neon) en `src/main/resources/db/` como fuente de verdad. Sin Flyway: el schema se mantiene como un solo archivo.
-- Agregar dependencias de PostgreSQL, Spring Data JPA, validación y Testcontainers. Verificar el nombre exacto de cada artefacto en la documentación oficial, porque Spring Boot 4 modularizó los starters.
-- Perfiles: desarrollo contra Neon y pruebas con Testcontainers, que carga el mismo `schema.sql` como script de inicio. Hibernate con `ddl-auto` en `none` y `spring.sql.init.mode` en `never`, para que la app nunca modifique la base.
-- Conexión a Neon por variable de entorno. Usar la conexión directa mientras se desarrolla y revisar la del pooler al desplegar. Ajustar los timeouts del pool al arranque en frío de Neon. Credenciales nunca en el repo: `.env.example` y `.env` en `.gitignore`.
-- Registrar en `CLAUDE.md` la convención de nombres: tablas y columnas en español, dominio en inglés, y la traducción dentro del adaptador de persistencia.
-- Fijar la fuente de verdad del alcance. Los repasos espaciados y el examen global no están en el anteproyecto: decidir si se documentan como alcance adicional.
+---
 
-## Fase 1 · Currículo
+### Fase 1 · Currículo ✅ `[COMPLETADA - 100%]`
 
-Es la primera slice y la que fija el patrón para todas las demás: reemplaza los datos en memoria de `Subject` y `Concept` por persistencia real y agrega el grafo de prerrequisitos. Termina cuando se puede crear y consultar un curso con su grafo válido por API.
+Primera slice vertical: persistencia real de asignaturas y conceptos, más el grafo dirigido acíclico de prerrequisitos.
 
-| Capa | Qué se construye |
-| --- | --- |
-| Dominio | Alinear `Concept` con el schema (id UUID, `codigo`, `nivel`; sale `difficulty`). Servicio puro de validación del grafo: sin ciclos ni autoenlaces. |
-| Puertos | Casos de uso de consultar asignaturas y conceptos, y de definir prerrequisitos. Repositorios de asignatura, concepto y prerrequisito. |
-| Driven | Adaptador JPA con mapper sobre las tablas `asignatura`, `concepto` y `prerrequisito`. Seed de Cálculo Integral como script SQL guardado en el repo y aplicado a mano en Neon. |
-| Driving | Endpoints `GET` de asignaturas y conceptos, y el de prerrequisitos. Errores con `ProblemDetail`. |
+- **Entregables implementados:**
+  - **Dominio:** `Subject`, `Concept` (id UUID, `codigo`, `nivel`, orden) y `PrerequisiteGraphValidator` (rechazo estricto de ciclos, autoenlaces y aristas inválidas).
+  - **Puertos:** `GetSubjectsUseCase`, `GetSubjectConceptsUseCase`, `GetConceptPrerequisitesUseCase`, `AddPrerequisiteUseCase`, `SubjectRepository`, `ConceptRepository`, `PrerequisiteRepository`.
+  - **Persistencia (Driven):** Entidades JPA (`SubjectJpaEntity`, `ConceptJpaEntity`, `PrerequisiteJpaEntity`), mappers y adaptadores. Seed de Cálculo Integral (`seed-calculo-integral.sql`).
+  - **REST (Driving):** `SubjectController`, `ConceptController`, `PrerequisiteController` con respuestas estandarizadas y gestión de errores RFC 7807 (`ProblemDetail`).
+  - **Tests:** `CurriculumServiceTest`, `SubjectControllerTest`, `PrerequisiteGraphValidatorTest`, `ConceptTest`, `CurriculumPersistenceTest`.
 
-Pruebas clave: un ciclo de tres conceptos se rechaza, un prerrequisito de otra asignatura se rechaza (lo garantiza también la base), y el seed carga un grafo válido. El grafo del seed debe revisarlo un docente antes de darlo por oficial.
+---
 
-## Fase 2 · Actividades y práctica
+### Fase 2 · Actividades y práctica ✅ `[COMPLETADA - 100%]`
 
-Permite que un estudiante practique un concepto y reciba retroalimentación, sin que eso decida su avance. Termina cuando se puede pedir una actividad de un concepto, responderla y ver el resultado y la retroalimentación específica.
+Permite al estudiante practicar un concepto y recibir retroalimentación formativa inmediata sin alterar directamente su nota formal de avance.
 
-| Capa | Qué se construye |
-| --- | --- |
-| Dominio | `Activity` con `dificultad` (1 a 3), `uso` y `tipo`. Reglas de corrección: una opción correcta en selección múltiple; respuesta corta normalizada con patrón o expresión regular. |
-| Puertos | Casos de uso de obtener actividades por concepto y uso, y de responder en práctica. Repositorios de actividad e intento de práctica. |
-| Driven | Adaptador JPA sobre actividad, sus opciones y criterios, y la tabla de intentos de práctica. Seed de un banco mínimo por concepto. |
-| Driving | `GET` de actividades y `POST` de respuesta de práctica. Nunca se devuelve cuál opción es la correcta antes de responder. |
+- **Entregables implementados:**
+  - **Dominio:** `Activity` con dificultad (1 a 3), uso (`PRACTICA`) y tipo (`SELECCION_MULTIPLE`, `RESPUESTA_CORTA`). `ActivityCorrectionService` para validación canónica de respuestas y retroalimentación específica sin filtrar claves.
+  - **Puertos:** `GetPracticeActivitiesUseCase`, `AnswerPracticeActivityUseCase`, `ActivityRepository`, `PracticeAttemptRepository`.
+  - **Persistencia (Driven):** Entidades JPA (`ActivityJpaEntity`, `ActivityOptionJpaEntity`, `ShortAnswerCriterionJpaEntity`, `PracticeAttemptJpaEntity`). Seed formativo (`seed-actividades.sql`).
+  - **REST (Driving):** `GET /api/v1/concepts/{conceptId}/practice-activities`, `POST /api/v1/activities/{activityId}/practice-attempts`. Manejo temporal de estudiante mediante cabecera `X-Student-Id`.
+  - **Documentación y pruebas:** [docs/fase-2-postman.md](docs/fase-2-postman.md), `PracticeServiceTest`, `PracticeControllerTest`, `PracticePersistenceTest`, `ActivityCorrectionServiceTest`.
 
-Decisión de orden: la práctica depende del estudiante, así que `estudiante` entra en esta fase solo como identificador. La autenticación completa queda para la Fase 6, con el estudiante recibido por parámetro o por un usuario de prueba.
+---
 
-Las tablas ya existen en Neon desde el inicio: esta fase solo agrega código, sin cambios de schema salvo que aparezca un ajuste.
+### Fase 3 · Estudiante, diagnóstico y dominio ✅ `[COMPLETADA - 100%]`
 
-## Fase 3 · Estudiante, diagnóstico y dominio
+Incorpora la adaptabilidad inicial: evalúa conocimientos previos (niveles 0 y 1) y estima el dominio conceptual inicial.
 
-Aquí entra lo adaptativo: el sistema estima el dominio de cada concepto a partir de evidencia. Termina cuando un estudiante hace el diagnóstico y recibe un perfil con su dominio estimado por concepto.
+- **Entregables implementados:**
+  - **Dominio:** `KnowledgeProfile`, `ConceptMastery` (0.0 a 1.0), `DiagnosticSession`, `DiagnosticAnswer`, `DiagnosticEvidence`. Interfaz `MasteryPolicy` con `RuleBasedMasteryPolicy` parametrizada por pesos configurables (dificultades 1: 1.0, 2: 1.5, 3: 2.0).
+  - **Puertos:** `DiagnosticUseCases`, `DiagnosticRepository`, `StudentExistencePort`.
+  - **Persistencia (Driven):** Entidades JPA (`KnowledgeProfileJpaEntity`, `ConceptMasteryJpaEntity`, `MasteryHistoryJpaEntity`, `DiagnosticSessionJpaEntity`, `DiagnosticAnswerJpaEntity`, `DiagnosticJpaRepositoryAdapter`). Trazabilidad con `origen_cambio = 'DIAGNOSTICO'`.
+  - **REST (Driving):** `DiagnosticController` con endpoints para iniciar sesión, enviar respuestas atómicas, finalizar diagnóstico y consultar perfil de conocimiento.
+  - **Documentación y pruebas:** [docs/fase-3-postman.md](docs/fase-3-postman.md), `seed-diagnostico.sql`, `DiagnosticServiceTest`, `DiagnosticControllerTest`, `RuleBasedMasteryPolicyTest`, `IncrementalMasteryTest`.
 
-| Capa | Qué se construye |
-| --- | --- |
-| Dominio | `KnowledgeProfile` y dominio por concepto (0.0 a 1.0). Interfaz `MasteryPolicy` con una primera implementación por reglas y umbrales configurables. Se mantiene separada la evidencia (respuestas) de la estimación (dominio). |
-| Puertos | Iniciar, responder y finalizar diagnóstico; consultar perfil. Repositorios de perfil, dominio, historial y sesión de evaluación. |
-| Driven | Adaptador JPA sobre perfil, dominio, historial y las tablas de sesión de evaluación. Cada cambio de dominio escribe una fila en el historial con su origen. |
-| Driving | Iniciar sesión de diagnóstico, enviar respuestas, finalizar y `GET` del perfil. |
+---
 
-Es la fase de mayor riesgo porque aquí vive el algoritmo. La política va detrás de su interfaz para poder cambiar reglas por BKT después, y se prueba con una tabla de casos. Los umbrales no se fijan sin validarlos con el docente.
+### Fase 4 · Ruta y evaluación corta ✅ `[COMPLETADA - 100%]`
 
-Pruebas clave: la misma entrada produce siempre el mismo dominio, el historial registra cada cambio con origen `DIAGNOSTICO`, y una sesión no se completa sin puntaje.
+Cierra el ciclo adaptativo principal: genera la ruta basada en el diagnóstico y administra evaluaciones cortas sumativas para decidir avance a `DOMINADO` o retroceso a `REFUERZO`, recalculando la ruta ante fallos reiterados.
 
-## Fase 4 · Ruta y evaluación corta
+- **Entregables implementados:**
+  - **Dominio:** `LearningPath`, `PathStep` con estados (`BLOQUEADO`, `DISPONIBLE`, `EN_PROGRESO`, `REFUERZO`, `DOMINADO`). `LearningPathGenerator` con ordenación topológica y preservación de prerrequisitos. `ShortEvaluation` y `EvaluationAnswer`. Combinación incremental de evidencia y recálculo con versionado (`version` autoincremental, ruta previa en `RECALCULADA`).
+  - **Puertos:** `LearningPathUseCases`, `LearningPathRepository`, `ShortEvaluationRepository`.
+  - **Persistencia (Driven):** Entidades JPA (`LearningPathJpaEntity`, `PathStepJpaEntity`, `LearningPathJpaRepositoryAdapter`, `ShortEvaluationJpaRepositoryAdapter`).
+  - **REST (Driving):** `LearningPathController` (`POST .../learning-path`, `GET .../learning-path`, `GET .../learning-path/next`, `POST .../short-evaluations`, `POST .../answers/{activityId}`, `POST .../finish`).
+  - **Documentación y pruebas:** [docs/fase-4-postman.md](docs/fase-4-postman.md), `seed-evaluacion-corta.sql`, `LearningPathServiceTest`, `LearningPathGeneratorTest`.
 
-Cierra el ciclo principal: el diagnóstico genera una ruta, y la evaluación corta de cada concepto decide si el estudiante avanza o refuerza. Termina cuando un estudiante recorre una ruta completa de ejemplo y esta se recalcula tras un fallo.
+---
 
-| Capa | Qué se construye |
-| --- | --- |
-| Dominio | `LearningPath` y `PathStep` con estados (bloqueado, disponible, en progreso, refuerzo, dominado). Generador de ruta que respeta prerrequisitos y orden topológico. Regla de avance o refuerzo tras una evaluación corta. |
-| Puertos | Generar ruta, consultar siguiente paso, iniciar y finalizar evaluación corta. Repositorios de ruta y de paso. |
-| Driven | Adaptador JPA sobre `V4`. Recalcular crea una versión nueva y marca la anterior como recalculada; nunca borra. |
-| Driving | `GET` de la ruta y del siguiente paso, y los endpoints de evaluación corta. |
+### Fase 5 · Repasos y examen global ⏳ `[PENDIENTE - 0%]`
 
-Reglas a cuidar: ninguna recomendación viola prerrequisitos, hay una sola ruta activa por estudiante y asignatura (la base lo impone), y cada actividad recomendada registra por qué se eligió.
+Incorpora la retención a largo plazo inspirada en Anki (algoritmo SM-2) y la evaluación sumativa de cierre de la asignatura.
 
-Pruebas clave: la ruta generada es un orden topológico válido, un fallo deja el paso en refuerzo, y recalcular conserva el historial de versiones.
+- **Alcance a construir:**
+  - **Dominio:** Algoritmo SM-2 como servicio puro independiente de frameworks (cálculo de nuevo Intervalo, Factor de Facilidad $\ge 1.30$, Repeticiones y clasificación de calificación 0 a 5). Detección de "amnesia conceptual" ($\ge 2$ fallos consecutivos) que dispara el recálculo adaptativo de la ruta a estado `REFUERZO`. Generación y selección de preguntas para el Examen Global ($X$).
+  - **Puertos:** Casos de uso para obtener cola de repaso del día (`fecha_proximo_repaso <= now()`), registrar calificación de tarjeta SM-2, cerrar sesión de repaso; iniciar, responder y finalizar examen global. Repositorios de tarjetas, progreso de repaso y sesiones de repaso.
+  - **Driven (Persistencia):** Entidades JPA y repositorios para las tablas ya presentes en `schema.sql`: `tarjeta_repaso`, `progreso_repaso`, `sesion_repaso` y `detalle_respuesta_repaso`. Seed con tarjetas de repaso para los conceptos de Cálculo Integral.
+  - **Driving (REST):** Endpoints para la cola diaria de repaso, envío de calificación SM-2 y ciclo de vida del examen global.
 
-## Fase 5 · Repasos y examen global
+---
 
-Agrega retención a largo plazo y el cierre de la asignatura. Estas dos piezas no están en el anteproyecto, así que van al final: el producto ya funciona sin ellas. Termina cuando un estudiante completa una sesión de repaso diaria y, al terminar la ruta, presenta el examen global.
+### Fase 6 · Transversales y Frontend 🟡 `[PARCIAL - ~20%]`
 
-| Capa | Qué se construye |
-| --- | --- |
-| Dominio | Algoritmo SM-2 como servicio puro (intervalo, factor de facilidad, calificación 0 a 5). Regla de fallos consecutivos que dispara el recálculo. Selección del examen global entre los conceptos de la ruta. |
-| Puertos | Obtener cola de repaso del día, calificar tarjeta, cerrar sesión de repaso; iniciar y finalizar examen global. |
-| Driven | Adaptador JPA sobre tarjetas, progreso y sesiones de repaso. La cola diaria consulta `fecha_proximo_repaso <= now()` apoyándose en el índice por estudiante y fecha. |
-| Driving | `GET` de la cola del día, `POST` de calificación y los endpoints del examen. |
+Aspectos no funcionales, seguridad, documentación interactiva y cliente web.
 
-Antes de empezar hay que cerrar dos decisiones de producto: con qué peso mueve el repaso el dominio estimado, y si el umbral de fallos se cuenta por tarjeta o por concepto. El umbral va en configuración.
+- **Completado:**
+  - Manejo uniforme de errores RFC 7807 (`ProblemDetail`) y captura global en `ApiExceptionHandler`.
+  - Validaciones de entrada en DTOs con Bean Validation.
+- **Pendiente:**
+  - **Autenticación y autorización:** Migrar del header provisional `X-Student-Id` a autenticación real con Spring Security (JWT / OAuth2 / Sesión).
+  - **Documentación de API:** Integración de `springdoc-openapi` para Swagger UI interactivo.
+  - **Frontend:** Aplicación SPA en React + TypeScript (visualización del grafo DAG con React Flow, renderizado matemático KaTeX, ejecutor de flashcards Anki y flujo de evaluación).
+  - **Despliegue y CI/CD:** Dockerfile multi-etapa, pipeline de GitHub Actions para ejecución de tests y despliegue del servicio.
 
-Pruebas clave: SM-2 contra una tabla de casos conocida, el factor de facilidad nunca baja de 1.30, y dos fallos consecutivos recalculan la ruta.
+---
 
-## Fase 6 · Transversales
+## ⚠️ Consideraciones Críticas a Tomar en Cuenta
 
-Lo que atraviesa todas las slices y se endurece al final. Termina cuando un estudiante nuevo puede registrarse y recorrer el flujo completo desde el navegador.
+### 1. Gestión de Base de Datos y Schema
+- **Inexistencia de migraciones automáticas:** El proyecto no utiliza Flyway ni Liquibase en tiempo de ejecución (`spring.sql.init.mode: never`, `ddl-auto: none`). Toda alteración de base de datos se debe aplicar manualmente en Supabase/PostgreSQL.
+- **Validación del DDL existente:** Aunque las tablas de repaso (`tarjeta_repaso`, `progreso_repaso`, `sesion_repaso`, `detalle_respuesta_repaso`) ya están en el script local `schema.sql`, se debe verificar que la base remota de desarrollo (Supabase) las tenga creadas antes de iniciar la Fase 5.
+- **Constraint pendiente de Fase 4:** Confirmar que en la base remota se haya ejecutado la restricción:
+  ```sql
+  ALTER TABLE sesion_evaluacion
+  ADD CONSTRAINT ck_sesion_evaluacion_paso_requerido
+  CHECK (tipo_evaluacion <> 'EVALUACION_CORTA' OR paso_ruta_id IS NOT NULL);
+  ```
 
-- **Autenticación y autorización:** registro e inicio de sesión con Spring Security. Cada endpoint toma al estudiante de la credencial y no de un parámetro. Decidir antes entre sesión y JWT.
-- **Errores y validación:** respuestas uniformes con `ProblemDetail` y validación de entrada en los DTOs.
-- **Documentación de la API:** OpenAPI generado desde los controllers.
-- **Frontend (React y TypeScript, como en el anteproyecto):** un solo flujo primero, diagnóstico, ruta y práctica. Puede avanzar en paralelo desde la Fase 2 si hay una persona dedicada, contra la API ya probada.
-- **Despliegue:** contenedor, variables de entorno y CI que corra los tests en cada cambio. El schema ya vive en Neon; los cambios futuros se aplican a mano (ver riesgos).
+### 2. Decisiones Pedagógicas y Calibración de Umbrales (Docente)
+- Los umbrales actuales configurados en `application.yaml` son provisionales:
+  - `diagnostic.mastery.difficulty-weights`: `{1: 1.0, 2: 1.5, 3: 2.0}`
+  - `learning-path.initial-mastery-threshold`: `0.80`
+  - `learning-path.short-evaluation.approval-threshold`: `70%`
+  - `learning-path.short-evaluation.consecutive-failures-before-recalculation`: `2`
+- **Decisión Fase 5 (Impacto del repaso):** Se debe definir con el docente si una sesión de repaso SM-2 exitosa o fallida altera la métrica de `ConceptMastery` en `perfil_conocimiento` o si únicamente actualiza el agendamiento y el estado del paso de ruta.
+- **Decisión Fase 5 (Amnesia conceptual):** Definir si el umbral de 2 fallos consecutivos se evalúa por tarjeta individual o por concepto agregado.
 
-## Decisiones pendientes y riesgos
-
-Seis decisiones frenan fases concretas; ninguna bloquea el arranque. Cada una se cierra antes de la fase indicada.
-
-| Decisión | Opciones | Se necesita antes de |
-| --- | --- | --- |
-| Fuente de verdad del alcance | Anteproyecto, `PROJECT_CONTEXT.md`, o ambos con los repasos marcados como alcance adicional | Fase 0 |
-| Identificador del dominio | UUID como id y `codigo` como slug, o slug como id | Fase 1 |
-| Umbrales de aprobación y de dominio | Valores iniciales validados con el docente, siempre configurables | Fase 3 |
-| Peso del repaso sobre el dominio estimado | Sin efecto, efecto parcial o igual que una evaluación | Fase 5 |
-| Umbral de fallos que recalcula la ruta | Por tarjeta o por concepto | Fase 5 |
-| Autenticación | Sesión o JWT | Fase 6, o antes si hay una demo |
-
-Riesgos y respuesta:
-
-- **El algoritmo de dominio** puede cambiar tras probarlo con estudiantes. Se aísla detrás de `MasteryPolicy` y se prueba con tablas de casos.
-- **Schema sin historial de migraciones.** Los cambios a la base se aplican a mano en Neon y no quedan versionados. Mitigación: `schema.sql` es la única fuente de verdad, se edita primero ahí y las pruebas con Testcontainers lo cargan, así que detectan desajustes. Si más personas modifican la base, conviene adoptar migraciones.
-- **Desajuste entre el schema y el código Java actual** (`Concept`). Se resuelve en la Fase 1, con pocas clases afectadas.
-- **Los skills no se han probado contra el repo real.** La primera slice sirve de prueba: si el agente repite un error, se corrige el skill en ese momento.
-- **Alcance adicional** (repasos y examen global) compite con el tiempo. Por eso van al final y el producto ya sirve sin ellos.
-
-Una slice cuenta como terminada cuando sus tests pasan, sus endpoints responden y el `README.md` está al día. Falta la fecha de entrega para poner fechas a las fases.
+### 3. Seguridad y Deuda Técnica
+- **Header `X-Student-Id`:** Es una solución provisional de desarrollo. En producción, la identidad debe resolverse desde el contexto de seguridad autenticado (`SecurityContextHolder`).
+- **Banco de Semillas:** Los scripts de seed (`seed-calculo-integral.sql`, `seed-actividades.sql`, `seed-diagnostico.sql`, `seed-evaluacion-corta.sql`) contienen ítems prototipo de prueba. El banco oficial completo (312 actividades) debe consolidarse formalmente antes de una prueba con usuarios reales.

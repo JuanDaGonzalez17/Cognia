@@ -28,6 +28,22 @@ Respuesta: `{"id":"<answer-uuid>","activityId":"42000000-0000-0000-0000-00000000
 
 Errores: 404 para recursos inexistentes, 422 para datos o actividades no válidas, 409 para diagnóstico pendiente, ruta ya activa, paso bloqueado o sesión fuera de estado. Ninguna respuesta incluye la corrección.
 
+## Pruebas automatizadas de Fase 4
+
+Ejecutar desde la carpeta `Cognia` en PowerShell. Estos comandos no se ejecutan contra Supabase:
+
+```powershell
+.\gradlew.bat test --tests "com.cognia.api.domain.service.LearningPathGeneratorTest"
+.\gradlew.bat test --tests "com.cognia.api.domain.service.IncrementalMasteryTest"
+.\gradlew.bat test --tests "com.cognia.api.application.service.LearningPathServiceTest"
+```
+
+La cobertura automatizada actual incluye las reglas puras del generador (orden topológico, bloqueo por prerrequisitos, transiciones, avance/refuerzo y conservación de pasos dominados) y la prueba de servicio para evitar una versión nueva cuando el recálculo no cambia la ruta. Las pruebas de servicio para errores y fallos consecutivos, así como las clases `LearningPathPersistenceTest` y `LearningPathControllerTest`, aún están pendientes de implementación; por tanto, no hay comandos ejecutables para ellas todavía.
+
+Las futuras pruebas de persistencia deben seguir el patrón de `CurriculumPersistenceTest` y `PracticePersistenceTest`: `@SpringBootTest`, perfil `test`, `@Import(TestcontainersConfiguration.class)` y seeds locales. Deben cubrir el flujo persistente, el índice que impide dos rutas ACTIVAS y el orden transaccional del recálculo (marcar la anterior RECALCULADA antes de insertar la nueva ACTIVA). Las futuras pruebas de controller deben seguir `DiagnosticControllerTest` con MockMvc y comprobar respuestas ProblemDetail y que las respuestas de una evaluación no revelen corrección.
+
+Esas pruebas de integración requieren Docker en ejecución. Testcontainers arranca PostgreSQL 16 y crea el esquema desde `schema.sql`; las pruebas usan la base local efímera del contenedor, nunca la base remota.
+
 ## Cambio de schema para la base existente
 
 `schema.sql` contiene la regla equivalente. Aplicar manualmente una vez:
