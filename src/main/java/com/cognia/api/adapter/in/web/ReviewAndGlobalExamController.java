@@ -1,4 +1,5 @@
 package com.cognia.api.adapter.in.web;
+import com.cognia.api.adapter.in.security.CurrentStudent;
 
 import com.cognia.api.application.port.in.ReviewAndGlobalExamUseCases;
 import com.cognia.api.domain.model.*;
@@ -11,13 +12,13 @@ public class ReviewAndGlobalExamController {
 	private final ReviewAndGlobalExamUseCases useCases;
 	public ReviewAndGlobalExamController(ReviewAndGlobalExamUseCases useCases){this.useCases=useCases;}
 
-	@GetMapping("/subjects/{subjectId}/reviews/due") public List<DueCardResponse> due(@PathVariable UUID subjectId,@RequestHeader("X-Student-Id") UUID student){return useCases.due(student,subjectId).stream().map(DueCardResponse::from).toList();}
-	@PostMapping("/subjects/{subjectId}/review-sessions") public ReviewSessionResponse startReview(@PathVariable UUID subjectId,@RequestHeader("X-Student-Id") UUID student){return ReviewSessionResponse.from(useCases.startReview(student,subjectId));}
-	@PostMapping("/review-sessions/{sessionId}/grades") public GradeResponse grade(@PathVariable UUID sessionId,@RequestHeader("X-Student-Id") UUID student,@RequestBody GradeRequest request){return GradeResponse.from(useCases.grade(student,sessionId,request.progressId(),request.grade(),request.seconds()));}
-	@PostMapping("/review-sessions/{sessionId}/finish") public ReviewSessionResponse finishReview(@PathVariable UUID sessionId,@RequestHeader("X-Student-Id") UUID student){return ReviewSessionResponse.from(useCases.finishReview(student,sessionId));}
-	@PostMapping("/subjects/{subjectId}/global-exams") public GlobalExamStartResponse startExam(@PathVariable UUID subjectId,@RequestHeader("X-Student-Id") UUID student){return GlobalExamStartResponse.from(useCases.startGlobalExam(student,subjectId));}
-	@PostMapping("/global-exams/{examId}/answers/{activityId}") public AnswerRecordedResponse answerExam(@PathVariable UUID examId,@PathVariable UUID activityId,@RequestHeader("X-Student-Id") UUID student,@RequestBody AnswerRequest request){var answer=useCases.answerGlobalExam(student,examId,activityId,request.optionId(),request.text(),request.seconds());return new AnswerRecordedResponse(answer.id(),answer.activityId(),"Respuesta registrada");}
-	@PostMapping("/global-exams/{examId}/finish") public GlobalExamResultResponse finishExam(@PathVariable UUID examId,@RequestHeader("X-Student-Id") UUID student){return GlobalExamResultResponse.from(useCases.finishGlobalExam(student,examId));}
+	@GetMapping("/subjects/{subjectId}/reviews/due") public List<DueCardResponse> due(@PathVariable UUID subjectId,@CurrentStudent UUID student){return useCases.due(student,subjectId).stream().map(DueCardResponse::from).toList();}
+	@PostMapping("/subjects/{subjectId}/review-sessions") public ReviewSessionResponse startReview(@PathVariable UUID subjectId,@CurrentStudent UUID student){return ReviewSessionResponse.from(useCases.startReview(student,subjectId));}
+	@PostMapping("/review-sessions/{sessionId}/grades") public GradeResponse grade(@PathVariable UUID sessionId,@CurrentStudent UUID student,@RequestBody GradeRequest request){return GradeResponse.from(useCases.grade(student,sessionId,request.progressId(),request.grade(),request.seconds()));}
+	@PostMapping("/review-sessions/{sessionId}/finish") public ReviewSessionResponse finishReview(@PathVariable UUID sessionId,@CurrentStudent UUID student){return ReviewSessionResponse.from(useCases.finishReview(student,sessionId));}
+	@PostMapping("/subjects/{subjectId}/global-exams") public GlobalExamStartResponse startExam(@PathVariable UUID subjectId,@CurrentStudent UUID student){return GlobalExamStartResponse.from(useCases.startGlobalExam(student,subjectId));}
+	@PostMapping("/global-exams/{examId}/answers/{activityId}") public AnswerRecordedResponse answerExam(@PathVariable UUID examId,@PathVariable UUID activityId,@CurrentStudent UUID student,@RequestBody AnswerRequest request){var answer=useCases.answerGlobalExam(student,examId,activityId,request.optionId(),request.text(),request.seconds());return new AnswerRecordedResponse(answer.id(),answer.activityId(),"Respuesta registrada");}
+	@PostMapping("/global-exams/{examId}/finish") public GlobalExamResultResponse finishExam(@PathVariable UUID examId,@CurrentStudent UUID student){return GlobalExamResultResponse.from(useCases.finishGlobalExam(student,examId));}
 
 	public record CardResponse(UUID id,UUID conceptId,String front,String back,String hint){static CardResponse from(ReviewCard c){return new CardResponse(c.id(),c.conceptId(),c.front(),c.back(),c.hint());}}
 	public record ProgressResponse(UUID id,double easeFactor,int intervalDays,int repetitions,int totalLapses,int consecutiveLapses,Instant nextReviewAt,String state){static ProgressResponse from(ReviewProgress p){return new ProgressResponse(p.id(),p.easeFactor(),p.intervalDays(),p.repetitions(),p.totalLapses(),p.consecutiveLapses(),p.nextReviewAt(),p.state().name());}}

@@ -20,7 +20,7 @@ public class LearningPathGenerator {
 			steps.add(new PathStep(null,c.id(),order++,state));}
 		return List.copyOf(steps);
 	}
-	public List<PathStep> regenerate(List<Concept> concepts,List<Prerequisite> graph,Map<UUID,Double> mastery,double threshold,List<PathStep> previous){var effective=new HashMap<>(mastery);previous.stream().filter(s->s.state()==PathStep.State.DOMINADO).forEach(s->effective.merge(s.conceptId(),1d,Math::max));var generated=generate(concepts,graph,effective,threshold);return unlockEligible(generated,graph,effective,threshold);}
+	public List<PathStep> regenerate(List<Concept> concepts,List<Prerequisite> graph,Map<UUID,Double> mastery,double threshold,List<PathStep> previous){var effective=new HashMap<>(mastery);previous.stream().filter(s->s.state()==PathStep.State.DOMINADO).forEach(s->effective.merge(s.conceptId(),1d,Math::max));var generated=generate(concepts,graph,effective,threshold);var preserved=generated.stream().map(step->previous.stream().filter(old->old.conceptId().equals(step.conceptId())&&(old.state()==PathStep.State.REFUERZO||old.state()==PathStep.State.EN_PROGRESO)).findFirst().map(old->new PathStep(step.id(),step.conceptId(),step.order(),old.state())).orElse(step)).toList();return unlockEligible(preserved,graph,effective,threshold);}
 	public List<PathStep> reopenAfterReview(List<Concept> concepts,List<Prerequisite> graph,Map<UUID,Double> mastery,double threshold,List<PathStep> previous,UUID reopenedConcept){
 		var generated=new ArrayList<>(regenerate(concepts,graph,mastery,threshold,previous));
 		var index=index(generated,reopenedConcept);

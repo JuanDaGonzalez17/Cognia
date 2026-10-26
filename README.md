@@ -8,8 +8,8 @@ Cognia es una plataforma de aprendizaje adaptativo con repetición espaciada. Pr
 
 A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de avance actualizados:
 
-* **Avance del Backend Core API (Fases 0 a 5):** **~95%** (Fases 0 a 3 y 5 completadas con tests unitarios y de integración; Fase 4 implementada con tests de dominio y aplicación, pendiente suite dedicada de persistencia y controller).
-* **Avance Global del Backend (incluyendo Fase 6):** **~85%** (Manejo de errores RFC 7807 y Bean Validation listos; pendientes Spring Security/JWT, OpenAPI y CI/CD).
+* **Avance del Backend Core API (Fases 0 a 5):** **~98%** (Fases 0 a 3 y 5 completadas; las pruebas dedicadas de persistencia y controller de Fase 4 fueron ejecutadas por el usuario y pasaron. La suite completa queda pendiente).
+* **Avance Global del Backend (incluyendo Fase 6):** **~90%** (Slices 1 y 2 implementados y verificados por el usuario; slice 3 de autenticación JWT implementado, pendiente de pruebas manuales y automatizadas).
 * **Avance del Frontend (`FrontPI`):** **~45%** (Interfaz y flujos completos en prototipo React 19 + Tailwind CSS v4 con estado local/mock; pendiente capa de integración HTTP con la API).
 * **Avance Global del Producto:** **~65% - 70%**.
 
@@ -21,9 +21,9 @@ A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de 
 | **Fase 1** | Currículo y Prerrequisitos | ✅ **Completada** | 100% | CRUD asignaturas/conceptos, validación acíclica de grafo y seed Cálculo Integral. |
 | **Fase 2** | Actividades y Práctica | ✅ **Completada** | 100% | Actividades formativas (SM y RC), feedback inmediato, registro de intentos. |
 | **Fase 3** | Diagnóstico y Dominio | ✅ **Completada** | 100% | Sesiones diagnósticas, cálculo de maestría inicial y auditoría en historial. |
-| **Fase 4** | Ruta y Evaluación Corta | 🟡 **Implementada** | 90% | Rutas topológicas, evaluación corta, avance/refuerzo y recálculo versionado listos; pendiente suite específica de integración Testcontainers y MockMvc para cerrar 100%. |
+| **Fase 4** | Ruta y Evaluación Corta | 🟡 **Implementada** | 95% | Rutas topológicas y evaluación corta listas. Pruebas de persistencia Testcontainers y controller MockMvc añadidas y confirmadas por el usuario; suite completa pendiente. |
 | **Fase 5** | Repasos SM-2 y Examen Global | ✅ **Completada** | 100% | Algoritmo SM-2, cola diaria, amnesia conceptual con reapertura idempotente, examen global y tests de dominio, aplicación, persistencia y controller listos. |
-| **Fase 6** | Transversales y Frontend | 🟡 **En Progreso** | ~35% | `ProblemDetail` y validaciones listas. Prototipo UI (`FrontPI`) maquetado. Pendiente: integración HTTP Front-Back, Spring Security/JWT, OpenAPI y CI/CD. |
+| **Fase 6** | Transversales y Frontend | 🟡 **En Progreso** | ~55% | Slices 1 y 2 implementados y verificados por el usuario. Slice 3 implementado: registro, login, JWT y protección stateless; pendiente probar y completar compatibilidad X-Student-Id en el slice 4. Siguen pendientes integración HTTP Front-Back y CI/CD. |
 
 ---
 
@@ -43,7 +43,7 @@ A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de 
 
 
 3. **Seguridad y Transición a Producción:**
-   - Actualmente los endpoints dependen de una cabecera HTTP provisional `X-Student-Id`. En la Fase 6 se reemplazará por autenticación real con Spring Security (JWT / OAuth2 / Sesión).
+   - La autenticación JWT y la protección stateless ya están implementadas. El slice 4 añadirá el fallback temporal `X-Student-Id` para dev/test y los tests históricos; después el frontend deberá enviar `Authorization: Bearer <token>`.
 
 ---
 
@@ -84,6 +84,22 @@ En Windows PowerShell:
 
 La API queda disponible en `http://localhost:8080`.
 
+### CORS y documentación OpenAPI
+
+CORS está habilitado para las rutas `/api/**` desde los orígenes locales `http://localhost:5173`, `http://localhost:8443` y `http://localhost:3000`. Se permiten los métodos `GET`, `POST`, `PUT`, `PATCH`, `DELETE` y `OPTIONS`, con credenciales.
+
+La especificación OpenAPI se publica en `http://localhost:8080/v3/api-docs` y Swagger UI en `http://localhost:8080/swagger-ui.html`. Swagger presenta el esquema Bearer JWT y el botón **Authorize**; el backend ya valida esos tokens y protege las rutas privadas.
+
+### Registro y autenticación
+
+- `POST /api/v1/auth/register` recibe `email`, `password` y `fullName` y crea una cuenta de estudiante.
+- `POST /api/v1/auth/login` recibe `email` y `password`; devuelve `token`, `expiresIn` (segundos), `studentId` y `fullName`.
+- `GET /api/v1/auth/me` requiere `Authorization: Bearer <token>`.
+
+El token dura 24 horas. Define `COGNIA_JWT_SECRET` como una clave codificada en Base64 de al menos 32 bytes para mantener una clave estable entre reinicios y réplicas. Si se omite, el backend genera una clave aleatoria al arrancar, apropiada solo para desarrollo local; los tokens emitidos dejarán de ser válidos al reiniciar.
+
+Los endpoints de las fases de aprendizaje ahora requieren Bearer JWT. La compatibilidad temporal con `X-Student-Id` en dev/test se añadirá en el Slice 4, por lo que el frontend que aún usa esa cabecera necesita ese slice antes de continuar el flujo.
+
 ### Endpoints Principales por Fase
 
 - **Health check:**
@@ -103,7 +119,7 @@ La API queda disponible en `http://localhost:8080`.
   ```bash
   curl http://localhost:8080/api/v1/concepts/20000000-0000-0000-0000-000000000001/practice-activities
   ```
-  Permite filtro opcional `?difficulty=1..3` y registro de intentos en `POST /api/v1/activities/{activityId}/practice-attempts` con cabecera `X-Student-Id`. Ejemplos completos en [docs/fase-2-postman.md](docs/fase-2-postman.md).
+  Permite filtro opcional `?difficulty=1..3` y registro de intentos en `POST /api/v1/activities/{activityId}/practice-attempts`. El endpoint requiere autenticación; los ejemplos de Postman con `X-Student-Id` vuelven a funcionar al completar el fallback dev/test del Slice 4. Detalles en [docs/fase-2-postman.md](docs/fase-2-postman.md).
 
 - **Fase 3 (Diagnóstico y Perfil de Maestría):**
   Diagnóstico inicial por asignatura y consulta de perfil. Respuestas atómicas sin revelar retroalimentación hasta el cierre. Endpoints, ejemplos y errores en [docs/fase-3-postman.md](docs/fase-3-postman.md).

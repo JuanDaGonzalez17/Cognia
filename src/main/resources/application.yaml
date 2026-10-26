@@ -10,6 +10,10 @@ spring:
   sql:
     init:
       mode: never
+cognia:
+  jwt:
+    secret: ${COGNIA_JWT_SECRET:}
+    expiration-seconds: 86400
 management:
   endpoints:
     web:
