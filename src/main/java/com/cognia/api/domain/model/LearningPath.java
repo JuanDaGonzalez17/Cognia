@@ -11,7 +11,7 @@ public record LearningPath(UUID id, UUID studentId, UUID subjectId, int version,
 		if (state == State.COMPLETADA && steps.stream().anyMatch(s -> s.state() != PathStep.State.DOMINADO)) throw new IllegalArgumentException("Completed path requires all steps mastered");
 	}
 	public LearningPath recalculate() {
-		if (state != State.ACTIVA) throw new IllegalStateException("Only an active path can be recalculated");
+		if (state == State.RECALCULADA) throw new IllegalStateException("A recalculated path cannot be recalculated again");
 		return new LearningPath(id, studentId, subjectId, version, State.RECALCULADA, steps);
 	}
 	public LearningPath withSteps(List<PathStep> updated) {

@@ -30,6 +30,13 @@ learning-path:
   short-evaluation:
     approval-threshold: 70 # provisional; validate with a teacher
     consecutive-failures-before-recalculation: 2 # provisional; validate with a teacher
+review:
+  initial-delay-days: 1 # provisional; validate with a teacher
+  queue-limit: 20 # provisional; validate with a teacher
+  consecutive-lapses-before-recalculation: 2 # provisional; validate with a teacher
+global-exam:
+  max-per-concept: 2 # provisional; validate with a teacher
+  passing-threshold: 70 # provisional; validate with a teacher
 ---
 spring:
   config:
@@ -53,6 +60,8 @@ spring:
   sql:
     init:
       mode: never
+review:
+  initial-delay-days: 0 # development only, to exercise the queue immediately
 ---
 spring:
   config:

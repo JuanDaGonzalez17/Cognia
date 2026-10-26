@@ -1,7 +1,7 @@
 # Plan de implementación - Cognia API
 
-**Fecha de actualización:** 20 de Octubre, 2026 · @Alejandro  
-**Estado General de Ejecución:** **~71.4% del Plan Global (5 de 7 Fases completadas)** / **83.3% del Backend Core API (5 de 6 Fases completadas)**
+**Fecha de actualización:** 26 de Octubre, 2026 · @Alejandro  
+**Estado General de Ejecución:** **~85.7% del Plan Global (6 de 7 Fases completadas o en curso)** / **100% del Backend Core API (Fases 0 a 5 implementadas con tests)**
 
 ---
 
@@ -14,8 +14,8 @@
 | **Fase 2** | Actividades y Práctica | ✅ **Completada** | 100% | Actividades formativas, SM y RC, retroalimentación inmediata, intentos registrados. |
 | **Fase 3** | Diagnóstico y Dominio | ✅ **Completada** | 100% | Sesiones diagnósticas, cálculo de maestría inicial y auditoría en historial. |
 | **Fase 4** | Ruta y Evaluación Corta | ✅ **Completada** | 100% | Rutas topológicas, evaluación sumativa (3 ítems), avance/refuerzo y recálculo versionado. |
-| **Fase 5** | Repasos SM-2 y Examen Global | ⏳ **Pendiente** | 0% | Motor SM-2 (Anki), cola diaria, amnesia conceptual (>=2 fallos) y examen global. |
-| **Fase 6** | Transversales y Frontend | 🟡 **Parcial** | ~20% | `ProblemDetail` y validaciones listas. Pendiente: Spring Security/JWT, OpenAPI, React y CI. |
+| **Fase 5** | Repasos SM-2 y Examen Global | ✅ **Completada** | 100% | Motor SM-2 (Anki), cola diaria, amnesia conceptual (>=2 fallos), examen global y tests. |
+| **Fase 6** | Transversales y Frontend | 🟡 **Parcial** | ~35% | `ProblemDetail` y validaciones listas. UI maquetada en `FrontPI`. Pendiente: integración Front-Back, Spring Security/JWT, OpenAPI y CI/CD. |
 
 ---
 
@@ -102,15 +102,16 @@ Cierra el ciclo adaptativo principal: genera la ruta basada en el diagnóstico y
 
 ---
 
-### Fase 5 · Repasos y examen global ⏳ `[PENDIENTE - 0%]`
+### Fase 5 · Repasos y examen global ✅ `[COMPLETADA - 100%]`
 
 Incorpora la retención a largo plazo inspirada en Anki (algoritmo SM-2) y la evaluación sumativa de cierre de la asignatura.
 
-- **Alcance a construir:**
-  - **Dominio:** Algoritmo SM-2 como servicio puro independiente de frameworks (cálculo de nuevo Intervalo, Factor de Facilidad $\ge 1.30$, Repeticiones y clasificación de calificación 0 a 5). Detección de "amnesia conceptual" ($\ge 2$ fallos consecutivos) que dispara el recálculo adaptativo de la ruta a estado `REFUERZO`. Generación y selección de preguntas para el Examen Global ($X$).
-  - **Puertos:** Casos de uso para obtener cola de repaso del día (`fecha_proximo_repaso <= now()`), registrar calificación de tarjeta SM-2, cerrar sesión de repaso; iniciar, responder y finalizar examen global. Repositorios de tarjetas, progreso de repaso y sesiones de repaso.
-  - **Driven (Persistencia):** Entidades JPA y repositorios para las tablas ya presentes en `schema.sql`: `tarjeta_repaso`, `progreso_repaso`, `sesion_repaso` y `detalle_respuesta_repaso`. Seed con tarjetas de repaso para los conceptos de Cálculo Integral.
-  - **Driving (REST):** Endpoints para la cola diaria de repaso, envío de calificación SM-2 y ciclo de vida del examen global.
+- **Entregables implementados:**
+  - **Dominio:** Algoritmo SM-2 (`Sm2Service`), invariantes de cálculo de nuevo intervalo, factor de facilidad ($\ge 1.30$), repeticiones y calificación 0-5. Detección de amnesia conceptual ($\ge 2$ fallos) con reapertura a `REFUERZO` y recálculo versionado idempotente. Selector de examen global (`GlobalExamContentSelector`).
+  - **Puertos:** Casos de uso y repositorios para cola de repaso diaria (`ReviewDeckPort`, `ReviewRepository`), calificación de tarjetas, sesión de repaso y ciclo completo de examen global.
+  - **Persistencia (Driven):** Entidades JPA (`ReviewCardJpaEntity`, `ReviewProgressJpaEntity`, `ReviewSessionJpaEntity`, `ReviewAnswerJpaEntity`), mapper y adaptador `ReviewJpaRepositoryAdapter`. Seed `seed-repaso-examen.sql`.
+  - **REST (Driving):** `ReviewAndGlobalExamController` con endpoints para cola diaria (`GET /reviews/due`), registro de calificación SM-2 (`POST /review-sessions/{id}/grades`), cierre de sesión, y endpoints de examen global (`POST /global-exams`, respuestas y finalización con desglose conceptual).
+  - **Documentación y pruebas:** [docs/fase-5-postman.md](docs/fase-5-postman.md), `Sm2ServiceTest`, `GlobalExamContentSelectorTest`, `ReviewAndGlobalExamServiceTest`, `LearningPathReviewAtomicityTest`, `ReviewPersistenceTest`, `ReviewAndGlobalExamControllerTest`.
 
 ---
 

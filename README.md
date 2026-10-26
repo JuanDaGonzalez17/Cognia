@@ -6,11 +6,12 @@ Cognia es una plataforma de aprendizaje adaptativo con repetición espaciada. Pr
 
 ## 📊 Estado de Ejecución y Hallazgos
 
-A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de avance basados en el [Plan de implementación - Cognia API.md](Plan%20de%20implementaci%C3%B3n%20-%20Cognia%20API.md):
+A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de avance actualizados:
 
-* **Avance del Plan General (7 Fases):** **~71.4%** (5 de 7 fases completadas al 100%, Fase 6 con base de errores y validaciones).
-* **Avance del Backend Core API (Fases 0 a 5):** **83.3%** (5 de 6 fases terminadas con tests e integración).
-* **Avance Global del Producto (incluyendo Frontend React):** **~50% - 55%** (cliente web aún no iniciado).
+* **Avance del Backend Core API (Fases 0 a 5):** **~95%** (Fases 0 a 3 y 5 completadas con tests unitarios y de integración; Fase 4 implementada con tests de dominio y aplicación, pendiente suite dedicada de persistencia y controller).
+* **Avance Global del Backend (incluyendo Fase 6):** **~85%** (Manejo de errores RFC 7807 y Bean Validation listos; pendientes Spring Security/JWT, OpenAPI y CI/CD).
+* **Avance del Frontend (`FrontPI`):** **~45%** (Interfaz y flujos completos en prototipo React 19 + Tailwind CSS v4 con estado local/mock; pendiente capa de integración HTTP con la API).
+* **Avance Global del Producto:** **~65% - 70%**.
 
 ### Tablero de Fases
 
@@ -20,9 +21,9 @@ A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de 
 | **Fase 1** | Currículo y Prerrequisitos | ✅ **Completada** | 100% | CRUD asignaturas/conceptos, validación acíclica de grafo y seed Cálculo Integral. |
 | **Fase 2** | Actividades y Práctica | ✅ **Completada** | 100% | Actividades formativas (SM y RC), feedback inmediato, registro de intentos. |
 | **Fase 3** | Diagnóstico y Dominio | ✅ **Completada** | 100% | Sesiones diagnósticas, cálculo de maestría inicial y auditoría en historial. |
-| **Fase 4** | Ruta y Evaluación Corta | 🟡 **Implementada; validación automatizada parcial** | — | Rutas topológicas, evaluación corta, avance/refuerzo y recálculo versionado; pendientes pruebas de persistencia y controller propias de la fase. |
-| **Fase 5** | Repasos SM-2 y Examen Global | ⏳ **Pendiente** | 0% | Motor SM-2 (Anki), cola diaria, amnesia conceptual ($\ge 2$ fallos) y examen global. |
-| **Fase 6** | Transversales y Frontend | 🟡 **Parcial** | ~20% | `ProblemDetail` y validaciones listas. Pendiente: Spring Security/JWT, OpenAPI, React y CI. |
+| **Fase 4** | Ruta y Evaluación Corta | 🟡 **Implementada** | 90% | Rutas topológicas, evaluación corta, avance/refuerzo y recálculo versionado listos; pendiente suite específica de integración Testcontainers y MockMvc para cerrar 100%. |
+| **Fase 5** | Repasos SM-2 y Examen Global | ✅ **Completada** | 100% | Algoritmo SM-2, cola diaria, amnesia conceptual con reapertura idempotente, examen global y tests de dominio, aplicación, persistencia y controller listos. |
+| **Fase 6** | Transversales y Frontend | 🟡 **En Progreso** | ~35% | `ProblemDetail` y validaciones listas. Prototipo UI (`FrontPI`) maquetado. Pendiente: integración HTTP Front-Back, Spring Security/JWT, OpenAPI y CI/CD. |
 
 ---
 
@@ -30,7 +31,7 @@ A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de 
 
 1. **Gestión de Base de Datos y Schema:**
    - **Sin migraciones automáticas:** Hibernate opera con `ddl-auto: none` y `spring.sql.init.mode: never`. Las modificaciones al esquema deben aplicarse manualmente en Supabase/PostgreSQL.
-   - **Tablas de Fase 5 en DDL:** El archivo [`src/main/resources/db/migration/schema.sql`](src/main/resources/db/migration/schema.sql) ya define las tablas `tarjeta_repaso`, `progreso_repaso`, `sesion_repaso` y `detalle_respuesta_repaso`. Antes de iniciar la Fase 5, verificar que la base remota de desarrollo tenga estas tablas ejecutadas.
+
    - **Constraint de Fase 4:** Confirmar que la restricción `ck_sesion_evaluacion_paso_requerido` esté aplicada en la base remota (ver [docs/fase-4-postman.md](docs/fase-4-postman.md)).
 
 2. **Parámetros y Calibración Pedagógica (Validación Docente):**
@@ -39,7 +40,7 @@ A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de 
      - `learning-path.initial-mastery-threshold`: `0.80`
      - `learning-path.short-evaluation.approval-threshold`: `70%`
      - `learning-path.short-evaluation.consecutive-failures-before-recalculation`: `2`
-   - **Decisiones pendientes para Fase 5:** Definir si el repaso SM-2 mueve el `ConceptMastery` del perfil de conocimiento o si solo gestiona la retención temporal en la cola de repaso, y si el umbral de amnesia conceptual (2 fallos consecutivos) se evalúa por tarjeta individual o por concepto.
+
 
 3. **Seguridad y Transición a Producción:**
    - Actualmente los endpoints dependen de una cabecera HTTP provisional `X-Student-Id`. En la Fase 6 se reemplazará por autenticación real con Spring Security (JWT / OAuth2 / Sesión).
@@ -164,5 +165,10 @@ Flujo estándar de ejecución:
 - **Identificadores:** Rutas y entidades utilizan UUIDs; las columnas y tablas se mantienen en español en la base de datos y se traducen en el adaptador JPA.
 - **Seeds:** Los archivos SQL en `src/main/resources/db/` son material provisional para revisión docente y pruebas.
 - **Pendientes principales:**
-  - Implementación de la **Fase 5** (Repetición espaciada SM-2 / Anki y Examen Global).
+
   - Implementación de la **Fase 6** (Spring Security / JWT, OpenAPI, Frontend en React + TypeScript y contenedor Docker / CI).
+
+
+## Fase 5: repasos SM-2 y examen global
+
+Cola diaria: GET /api/v1/subjects/{subjectId}/reviews/due. Sesiones: /api/v1/subjects/{subjectId}/review-sessions y /api/v1/review-sessions/{sessionId}. Examen: /api/v1/subjects/{subjectId}/global-exams y /api/v1/global-exams/{examId}. Al aprobar la evaluación corta, las tarjetas activas se añaden al mazo dentro de la misma transacción. Para examen, la ruta de mayor versión debe estar COMPLETADA. La guía del flujo y los UUID provisionales están en [docs/fase-5-postman.md](docs/fase-5-postman.md).

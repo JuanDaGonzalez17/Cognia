@@ -21,6 +21,24 @@ public class LearningPathGenerator {
 		return List.copyOf(steps);
 	}
 	public List<PathStep> regenerate(List<Concept> concepts,List<Prerequisite> graph,Map<UUID,Double> mastery,double threshold,List<PathStep> previous){var effective=new HashMap<>(mastery);previous.stream().filter(s->s.state()==PathStep.State.DOMINADO).forEach(s->effective.merge(s.conceptId(),1d,Math::max));var generated=generate(concepts,graph,effective,threshold);return unlockEligible(generated,graph,effective,threshold);}
+	public List<PathStep> reopenAfterReview(List<Concept> concepts,List<Prerequisite> graph,Map<UUID,Double> mastery,double threshold,List<PathStep> previous,UUID reopenedConcept){
+		var generated=new ArrayList<>(regenerate(concepts,graph,mastery,threshold,previous));
+		var index=index(generated,reopenedConcept);
+		var current=generated.get(index);
+		if(current.state()==PathStep.State.DOMINADO) generated.set(index,current.transitionTo(PathStep.State.REFUERZO));
+		for(int i=0;i<generated.size();i++){
+			var step=generated.get(i);
+			var old=previous.stream().filter(p->p.conceptId().equals(step.conceptId())).findFirst().orElse(null);
+			if(old==null || old.state()==PathStep.State.DOMINADO || step.conceptId().equals(reopenedConcept)) continue;
+			if(old.state()==PathStep.State.EN_PROGRESO){generated.set(i,new PathStep(step.id(),step.conceptId(),step.order(),PathStep.State.EN_PROGRESO));continue;}
+			var prerequisites=graph.stream().filter(e->e.conceptId().equals(step.conceptId())).map(Prerequisite::prerequisiteId).filter(id->generated.stream().anyMatch(p->p.conceptId().equals(id))).toList();
+			if(prerequisites.isEmpty()) continue;
+			var eligible=prerequisites.stream().allMatch(id->generated.stream().anyMatch(p->p.conceptId().equals(id)&&p.state()==PathStep.State.DOMINADO));
+			if(!eligible && step.state()!=PathStep.State.BLOQUEADO) generated.set(i,step.transitionTo(PathStep.State.BLOQUEADO));
+			else if(eligible && step.state()==PathStep.State.BLOQUEADO) generated.set(i,step.transitionTo(PathStep.State.DISPONIBLE));
+		}
+		return List.copyOf(generated);
+	}
 	public List<PathStep> afterResult(List<PathStep> source, UUID conceptId, boolean passed, List<Prerequisite> graph) {
 		var steps=new ArrayList<>(source); int index=index(steps,conceptId); var target=steps.get(index);
 		if(target.state()==PathStep.State.DISPONIBLE || target.state()==PathStep.State.REFUERZO) target=target.transitionTo(PathStep.State.EN_PROGRESO);
