@@ -2,6 +2,8 @@ package com.cognia.api.adapter.in.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,8 +16,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfiguration {
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenService tokens) throws Exception {
-		return http
+	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenService tokens, Environment environment) throws Exception {
+		http
 				.cors(Customizer.withDefaults())
 				.csrf(csrf -> csrf.disable())
 				.formLogin(form -> form.disable())
@@ -32,7 +34,10 @@ public class SecurityConfiguration {
 						.requestMatchers("/actuator/health", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
 								"/api/v1/auth/register", "/api/v1/auth/login").permitAll()
 						.anyRequest().authenticated())
-				.addFilterBefore(new JwtAuthenticationFilter(tokens), UsernamePasswordAuthenticationFilter.class)
-				.build();
+				.addFilterBefore(new JwtAuthenticationFilter(tokens), UsernamePasswordAuthenticationFilter.class);
+		if (environment.acceptsProfiles(Profiles.of("dev", "test"))) {
+			http.addFilterBefore(new StudentHeaderAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+		}
+		return http.build();
 	}
 }

@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import(TestcontainersConfiguration.class)
 @Sql("/db/seed-calculo-integral.sql")
 class SubjectControllerTest {
+	private static final String STUDENT_ID = "30000000-0000-0000-0000-000000000001";
 	private static final String SUBJECT_ID = "10000000-0000-0000-0000-000000000001";
 	private static final String FIRST_CONCEPT_ID = "20000000-0000-0000-0000-000000000001";
 	private static final String SECOND_CONCEPT_ID = "20000000-0000-0000-0000-000000000002";
@@ -31,10 +32,10 @@ class SubjectControllerTest {
 
 	@Test
 	void returnsSubjectAndConcepts() throws Exception {
-		mockMvc.perform(get("/api/v1/subjects/" + SUBJECT_ID))
+		mockMvc.perform(get("/api/v1/subjects/" + SUBJECT_ID).header("X-Student-Id", STUDENT_ID))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.code").value("calculo-integral"));
-		mockMvc.perform(get("/api/v1/subjects/" + SUBJECT_ID + "/concepts"))
+		mockMvc.perform(get("/api/v1/subjects/" + SUBJECT_ID + "/concepts").header("X-Student-Id", STUDENT_ID))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.length()").value(4))
 				.andExpect(jsonPath("$[0].level").value(0));
@@ -42,7 +43,8 @@ class SubjectControllerTest {
 
 	@Test
 	void returnsPrerequisitesForConcept() throws Exception {
-		mockMvc.perform(get("/api/v1/concepts/" + SECOND_CONCEPT_ID + "/prerequisites"))
+		mockMvc.perform(get("/api/v1/concepts/" + SECOND_CONCEPT_ID + "/prerequisites")
+				.header("X-Student-Id", STUDENT_ID))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.length()").value(1))
 				.andExpect(jsonPath("$[0].prerequisiteId").value(FIRST_CONCEPT_ID));
@@ -50,7 +52,8 @@ class SubjectControllerTest {
 
 	@Test
 	void returnsProblemDetailNotFoundForUnknownConcept() throws Exception {
-		mockMvc.perform(get("/api/v1/concepts/00000000-0000-0000-0000-000000000099/prerequisites"))
+		mockMvc.perform(get("/api/v1/concepts/00000000-0000-0000-0000-000000000099/prerequisites")
+				.header("X-Student-Id", STUDENT_ID))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404))
 				.andExpect(jsonPath("$.title").value("Resource not found"));
@@ -59,12 +62,14 @@ class SubjectControllerTest {
 	@Test
 	void returns422ForSelfPrerequisiteAnd409ForCycle() throws Exception {
 		mockMvc.perform(post("/api/v1/concepts/" + FIRST_CONCEPT_ID + "/prerequisites")
+					.header("X-Student-Id", STUDENT_ID)
 					.contentType(MediaType.APPLICATION_JSON)
 					.content("{\"prerequisiteId\":\"" + FIRST_CONCEPT_ID + "\"}"))
 				.andExpect(status().isUnprocessableEntity())
 				.andExpect(jsonPath("$.status").value(422));
 
 		mockMvc.perform(post("/api/v1/concepts/" + FIRST_CONCEPT_ID + "/prerequisites")
+					.header("X-Student-Id", STUDENT_ID)
 					.contentType(MediaType.APPLICATION_JSON)
 					.content("{\"prerequisiteId\":\"" + SECOND_CONCEPT_ID + "\"}"))
 				.andExpect(status().isConflict())

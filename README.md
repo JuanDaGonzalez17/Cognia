@@ -9,7 +9,7 @@ Cognia es una plataforma de aprendizaje adaptativo con repetición espaciada. Pr
 A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de avance actualizados:
 
 * **Avance del Backend Core API (Fases 0 a 5):** **~98%** (Fases 0 a 3 y 5 completadas; las pruebas dedicadas de persistencia y controller de Fase 4 fueron ejecutadas por el usuario y pasaron. La suite completa queda pendiente).
-* **Avance Global del Backend (incluyendo Fase 6):** **~90%** (Slices 1 y 2 implementados y verificados por el usuario; slice 3 de autenticación JWT implementado, pendiente de pruebas manuales y automatizadas).
+* **Avance Global del Backend (incluyendo Fase 6):** **~95%** (Slices 1 a 5 implementados; pendientes integración HTTP completa Front-Back y primera ejecución de CI).
 * **Avance del Frontend (`FrontPI`):** **~45%** (Interfaz y flujos completos en prototipo React 19 + Tailwind CSS v4 con estado local/mock; pendiente capa de integración HTTP con la API).
 * **Avance Global del Producto:** **~65% - 70%**.
 
@@ -23,7 +23,7 @@ A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de 
 | **Fase 3** | Diagnóstico y Dominio | ✅ **Completada** | 100% | Sesiones diagnósticas, cálculo de maestría inicial y auditoría en historial. |
 | **Fase 4** | Ruta y Evaluación Corta | 🟡 **Implementada** | 95% | Rutas topológicas y evaluación corta listas. Pruebas de persistencia Testcontainers y controller MockMvc añadidas y confirmadas por el usuario; suite completa pendiente. |
 | **Fase 5** | Repasos SM-2 y Examen Global | ✅ **Completada** | 100% | Algoritmo SM-2, cola diaria, amnesia conceptual con reapertura idempotente, examen global y tests de dominio, aplicación, persistencia y controller listos. |
-| **Fase 6** | Transversales y Frontend | 🟡 **En Progreso** | ~55% | Slices 1 y 2 implementados y verificados por el usuario. Slice 3 implementado: registro, login, JWT y protección stateless; pendiente probar y completar compatibilidad X-Student-Id en el slice 4. Siguen pendientes integración HTTP Front-Back y CI/CD. |
+| **Fase 6** | Transversales y Frontend | 🟡 **En Progreso** | ~75% | Slices 1 a 5 implementados; pendientes integración HTTP Front-Back y validar el workflow CI en GitHub. |
 
 ---
 
@@ -43,7 +43,7 @@ A fecha de **Octubre 2026**, el proyecto presenta los siguientes indicadores de 
 
 
 3. **Seguridad y Transición a Producción:**
-   - La autenticación JWT y la protección stateless ya están implementadas. El slice 4 añadirá el fallback temporal `X-Student-Id` para dev/test y los tests históricos; después el frontend deberá enviar `Authorization: Bearer <token>`.
+   - La autenticación JWT es stateless. `X-Student-Id` solo funciona como fallback en perfiles `dev` y `test`; producción requiere `Authorization: Bearer <token>`. Los tests MockMvc pueden usar `@WithMockStudent`.
 
 ---
 
@@ -98,7 +98,7 @@ La especificación OpenAPI se publica en `http://localhost:8080/v3/api-docs` y S
 
 El token dura 24 horas. Define `COGNIA_JWT_SECRET` como una clave codificada en Base64 de al menos 32 bytes para mantener una clave estable entre reinicios y réplicas. Si se omite, el backend genera una clave aleatoria al arrancar, apropiada solo para desarrollo local; los tokens emitidos dejarán de ser válidos al reiniciar.
 
-Los endpoints de las fases de aprendizaje ahora requieren Bearer JWT. La compatibilidad temporal con `X-Student-Id` en dev/test se añadirá en el Slice 4, por lo que el frontend que aún usa esa cabecera necesita ese slice antes de continuar el flujo.
+Los endpoints privados requieren Bearer JWT en producción. En perfiles `dev` y `test`, si no se envía `Authorization`, se acepta temporalmente `X-Student-Id` para mantener compatibilidad con el frontend y los tests históricos. Si se envía `Authorization`, el fallback no se aplica.
 
 ### Endpoints Principales por Fase
 
@@ -182,9 +182,46 @@ Flujo estándar de ejecución:
 - **Seeds:** Los archivos SQL en `src/main/resources/db/` son material provisional para revisión docente y pruebas.
 - **Pendientes principales:**
 
-  - Implementación de la **Fase 6** (Spring Security / JWT, OpenAPI, Frontend en React + TypeScript y contenedor Docker / CI).
+  - Integración HTTP completa entre el frontend y el backend; primera ejecución del workflow CI pendiente.
 
 
 ## Fase 5: repasos SM-2 y examen global
 
 Cola diaria: GET /api/v1/subjects/{subjectId}/reviews/due. Sesiones: /api/v1/subjects/{subjectId}/review-sessions y /api/v1/review-sessions/{sessionId}. Examen: /api/v1/subjects/{subjectId}/global-exams y /api/v1/global-exams/{examId}. Al aprobar la evaluación corta, las tarjetas activas se añaden al mazo dentro de la misma transacción. Para examen, la ruta de mayor versión debe estar COMPLETADA. La guía del flujo y los UUID provisionales están en [docs/fase-5-postman.md](docs/fase-5-postman.md).
+
+### Slice 4: compatibilidad de identidad en desarrollo y tests
+
+El fallback `X-Student-Id` está habilitado únicamente en los perfiles `dev` y `test`, y solo cuando la solicitud no incluye `Authorization`. En producción, las rutas privadas requieren Bearer JWT. Los tests MockMvc pueden establecer una identidad mediante `@WithMockStudent`; los tests de compatibilidad del header ejercitan el fallback real.
+
+Verificación pendiente de ejecución manual (no se ejecutaron tests ni compilación durante este cambio):
+
+```powershell
+.\gradlew.bat test --tests "com.cognia.api.adapter.in.web.PracticeControllerTest"
+.\gradlew.bat test --tests "com.cognia.api.adapter.in.web.SubjectControllerTest"
+.\gradlew.bat test
+```
+
+### Slice 5: Docker y CI
+
+El `Dockerfile` crea un JAR con Java 17 en una etapa de construcción y lo ejecuta en una imagen JRE como usuario sin privilegios. `docker-compose.yml` levanta PostgreSQL 16 y la API con el perfil `prod`; en este perfil el fallback `X-Student-Id` permanece deshabilitado. Los datos de Postgres se conservan en el volumen `cognia-postgres-data`.
+
+Para preparar el entorno local sin modificar el `.env` que ya puedas usar con Supabase:
+
+```powershell
+Copy-Item .env.example .env.docker
+# Edita .env.docker: configura una contraseña privada y COGNIA_JWT_SECRET.
+docker compose --env-file .env.docker up --build
+```
+
+Genera `COGNIA_JWT_SECRET` con `openssl rand -base64 32`. La base local arranca vacía y el backend no aplica DDL ni seeds automáticamente; carga el schema y los datos requeridos según la guía de base de datos antes de usar los endpoints. La API queda en `http://localhost:8080`; PostgreSQL queda publicado en `localhost:5432` por defecto.
+
+Para detener los contenedores conservando los datos: `docker compose --env-file .env.docker down`. Para borrar también el volumen persistente: `docker compose --env-file .env.docker down --volumes`.
+
+GitHub Actions ejecuta tests, genera el JAR y construye la imagen Docker en cada push o pull request a `main`, `master` o `develop`. El pipeline aún requiere su primera ejecución en GitHub para validarse.
+
+Verificación local de los archivos Compose y construcción de imagen:
+
+```powershell
+docker compose --env-file .env.docker config
+docker compose --env-file .env.docker build
+```

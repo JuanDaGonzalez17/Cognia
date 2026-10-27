@@ -4,9 +4,10 @@
 
 - **Slice 1 — cierre de pruebas de Fase 4:** implementada. El usuario confirmó que las pruebas de persistencia y controller pasaron.
 - **Slice 2 — CORS y OpenAPI/Swagger:** implementada y verificada manualmente por el usuario; el flujo frontend funciona y Swagger UI/OpenAPI abren.
-- **Slice 3 — Spring Security y JWT:** implementación preparada en este cambio; quedan pendientes pruebas manuales y automatizadas.
+- **Slice 3 — Spring Security y JWT:** implementada; el usuario confirmó que las pruebas pasaron.
 - **Decisión de compatibilidad:** este proyecto utiliza Spring Boot 4.1.1; springdoc usa la línea 3.x para Boot 4. El ejemplo se actualiza a `3.2.0` según la matriz oficial de compatibilidad.
-- **Slices 4 y 5:** pendientes.
+- **Slice 4:** implementada y verificada por el usuario; la suite completa pasó.
+- **Slice 5:** implementada; pendientes validación manual local y primera ejecución de CI.
 
 ### Plan ejecutado para el Slice 2
 
@@ -366,3 +367,33 @@ Al terminar el trabajo, el agente **DEBE** verificar los siguientes puntos antes
 3. [ ] Swagger UI responde en `http://localhost:8080/swagger-ui.html` mostrando la documentación completa de todas las fases (Fase 1 a Fase 6).
 4. [ ] Las peticiones a endpoints protegidos sin token o sin cabecera de autenticación devuelven `401 Unauthorized` bajo formato RFC 7807 (`application/problem+json`).
 5. [ ] El archivo [README.md](README.md) queda actualizado reflejando la Fase 6 completada, los nuevos comandos de Docker y las instrucciones de autenticación JWT.
+
+## Registro de ejecución — Slice 4
+
+- Añadido `@WithMockStudent` para establecer un principal de estudiante en pruebas MockMvc.
+- Añadido fallback `X-Student-Id`, registrado exclusivamente en perfiles `dev` y `test`. Si existe `Authorization`, este fallback se omite y la identidad Bearer es la única que puede autenticar la solicitud.
+- Los endpoints privados sin identidad válida responden `401` con `application/problem+json`; el test de práctica refleja ahora ese contrato.
+- Tests afectados ajustados para usar el contexto simulado o validar el fallback. No se ejecutaron tests ni compilación por instrucción del usuario.
+
+Comandos para ejecución manual:
+
+```powershell
+.\gradlew.bat test --tests "com.cognia.api.adapter.in.web.PracticeControllerTest"
+.\gradlew.bat test --tests "com.cognia.api.adapter.in.web.SubjectControllerTest"
+.\gradlew.bat test
+```
+
+## Registro de ejecución — Slice 5
+
+- Añadidos `Dockerfile` multi-stage con Java 17, usuario no root y perfil predeterminado `prod`; `.dockerignore`; y `docker-compose.yml` con PostgreSQL 16, volumen persistente, healthcheck y variables obligatorias para password y secreto JWT.
+- Añadido `.env.example`; `.env.docker` queda excluido de Git para no versionar credenciales ni interferir con el `.env` de Supabase existente.
+- Añadido GitHub Actions CI para ejecutar tests, generar el JAR y construir la imagen. La CI no publica imágenes ni despliega.
+- Compose no carga schema ni seeds: el proyecto mantiene `ddl-auto: none` y `spring.sql.init.mode: never`; inicializar la base sigue siendo un paso manual.
+- No se ejecutaron tests, compilación ni comandos Docker. Validación manual pendiente:
+
+```powershell
+Copy-Item .env.example .env.docker
+# Editar .env.docker y generar COGNIA_JWT_SECRET con: openssl rand -base64 32
+docker compose --env-file .env.docker config
+docker compose --env-file .env.docker up --build
+```
