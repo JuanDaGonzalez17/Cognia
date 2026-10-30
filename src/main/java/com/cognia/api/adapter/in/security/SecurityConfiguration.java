@@ -32,7 +32,7 @@ public class SecurityConfiguration {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers("/actuator/health", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
-								"/api/v1/auth/register", "/api/v1/auth/login", "https://cognia-9fq5.onrender.com/api/v1/**").permitAll()
+								"/api/v1/auth/register", "/api/v1/auth/login", "https://front-pi-eta.vercel.app/**").permitAll()
 						.anyRequest().authenticated())
 				.addFilterBefore(new JwtAuthenticationFilter(tokens), UsernamePasswordAuthenticationFilter.class);
 		if (environment.acceptsProfiles(Profiles.of("dev", "test"))) {
