@@ -56,6 +56,7 @@ public class SecurityConfiguration {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowedOrigins(List.of(
 				"https://front-pi-eta.vercel.app/"   // your deployed frontend
+				"https://localhost:3000"  // your local frontend
 		));
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
