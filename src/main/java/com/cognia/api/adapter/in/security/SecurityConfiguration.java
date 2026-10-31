@@ -59,7 +59,7 @@ public class SecurityConfiguration {
 				"https://localhost:3000"  // your local frontend
 		));
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-		config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+		config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Auth-Token", "X-Requested-With", "Accept", "x-student-id", "x-student-name", "*"));
 		config.setAllowCredentials(true); // only if you use cookies; otherwise you can drop it
 		config.setExposedHeaders(List.of("Authorization"));
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
