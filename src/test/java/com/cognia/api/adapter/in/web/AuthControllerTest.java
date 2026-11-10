@@ -61,4 +61,10 @@ class AuthControllerTest {
 				.contentTypeCompatibleWith("application/problem+json"))
 			.andExpect(jsonPath("$.title").value("Unauthorized"));
 	}
+
+	@Test
+	void logoutRequiresAuthentication() throws Exception {
+		mvc.perform(post("/api/v1/auth/logout"))
+			.andExpect(status().isUnauthorized());
+	}
 }
