@@ -41,6 +41,11 @@ class DiagnosticControllerTest {
 		var started=mvc.perform(post("/api/v1/subjects/{id}/diagnostics",SUBJECT).header("X-Student-Id",STUDENT)).andExpect(status().isOk()).andReturn();var id=sessionId(started.getResponse().getContentAsString());
 		mvc.perform(post("/api/v1/diagnostics/{id}/finish",id).header("X-Student-Id",STUDENT)).andExpect(status().isUnprocessableEntity());
 	}
+	@Test void abandoningDiagnosticClosesItAndAllowsStartingAnotherSession() throws Exception {
+		var started=mvc.perform(post("/api/v1/subjects/{id}/diagnostics",SUBJECT).header("X-Student-Id",STUDENT)).andExpect(status().isOk()).andReturn();var id=sessionId(started.getResponse().getContentAsString());
+		mvc.perform(post("/api/v1/diagnostics/{id}/abandon",id).header("X-Student-Id",STUDENT)).andExpect(status().isOk()).andExpect(jsonPath("$.state").value("ABANDONADA")).andExpect(jsonPath("$.closedAt").exists());
+		mvc.perform(post("/api/v1/subjects/{id}/diagnostics",SUBJECT).header("X-Student-Id",STUDENT)).andExpect(status().isOk()).andExpect(jsonPath("$.session.id").value(org.hamcrest.Matchers.not(id)));
+	}
 	@Test void databaseRejectsDuplicateActivityAnswerInOneSession(){var session=diagnostics.saveSession(new DiagnosticSession(null,java.util.UUID.fromString(STUDENT),java.util.UUID.fromString(SUBJECT),"EN_PROGRESO",null,null));var activity=java.util.UUID.fromString(ACTIVITY);var option=java.util.UUID.fromString(OPTION);diagnostics.saveAnswer(new DiagnosticAnswer(null,session.id(),activity,option,null,true,null));assertThrows(DataIntegrityViolationException.class,()->diagnostics.saveAnswer(new DiagnosticAnswer(null,session.id(),activity,option,null,true,null)));}
 	private String sessionId(String json){var prefix="\"session\":{\"id\":\"";var start=json.indexOf(prefix)+prefix.length();return json.substring(start,json.indexOf('"',start));}
 }

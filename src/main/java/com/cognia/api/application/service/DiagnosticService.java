@@ -101,6 +101,14 @@ public class DiagnosticService implements DiagnosticUseCases {
 		return complete;
 	}
 
+	@Transactional
+	public DiagnosticSession abandon(UUID student, UUID sessionId) {
+		ensureStudent(student);
+		var session = ownedSession(student, sessionId);
+		if (!session.state().equals("EN_PROGRESO")) throw new DiagnosticConflictException("Diagnostic session is not in progress");
+		return repo.saveSession(new DiagnosticSession(session.id(), student, session.subjectId(), "ABANDONADA", null, Instant.now()));
+	}
+
 	public KnowledgeProfile profile(UUID student, UUID subject) {
 		ensureStudent(student);
 		if (subjects.findById(subject).isEmpty()) throw new ResourceNotFoundException("Subject " + subject + " was not found");
